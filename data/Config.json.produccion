@@ -1,0 +1,6 @@
+{
+"NivelActivo":1,
+"IPControlador": "10.68.1.60",
+"IPActuador": "10.68.1.61",
+"IPGateway":"10.68.1.1"
+}

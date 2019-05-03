@@ -1,0 +1,7 @@
+{
+	"IPBroker": "10.68.1.100", 
+	"puerto": 1883, 
+	"usuarioMQTT": "usuario", 
+	"passwordMQTT": "password", 
+	"topicRoot": "casa"
+}
