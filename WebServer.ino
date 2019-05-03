@@ -22,21 +22,24 @@ String pieHTML="</BODY></HTML>";
 void handleRoot() 
   {
   String cad="";
-  
+
+  cad += cabeceraHTML;
   //genero la respuesta por defecto
   cad += IDENTIFICACION;
   cad +="<BR><BR>";
   cad += "<table>";  
   cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
-  cad += "<tr><td>Estado de los reles</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>N/A</td><td>id_0#nombre_0#estado_0|id_1#nombre_1#estado_1</td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";
-  cad += "<tr><td>Activa rele</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele</td><td>id=$id$</td><td>id#estado</td><td>Activa el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele?id=1</td><td>1|1</td></tr>";
-  cad += "<tr><td>Desactivarele</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele</td><td>id=$id$</td><td>id#estado</td><td>Desactiva el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0</td><td>0|0</td></tr>";  
-  cad += "<tr><td>Test</td><td>http://" + String(getIP(debugGlobal)) + "/test</td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
-  cad += "<tr><td>Reinicia el controlador.</td><td>http://" + String(getIP(debugGlobal)) + "/restart</td></tr>";
-  cad += "<tr><td>Informacion del Hw del sistema</td><td>http://" + String(getIP(debugGlobal)) + "/info</td></tr>";
+  cad += "<tr><td>Estado de los reles</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/estado"">http://" + String(getIP(debugGlobal)) + "/estado</a></td><td>N/A</td><td>id_0#nombre_0#estado_0|id_1#nombre_1#estado_1</td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";
+  cad += "<tr><td>Activa rele</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/activaRele?id=0"">http://" + String(getIP(debugGlobal)) + "/activaRele?id=<b>id</b></a></td><td>N/A</td><td>id#estado</td><td>Activa el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele?id=1</td><td>1|1</td></tr>";
+  cad += "<tr><td>Desactivarele</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0"">http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=<b>id</b></a></td><td>N/A</td><td>id#estado</td><td>Desactiva el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0</td><td>0|0</td></tr>";  
+  cad += "<tr><td>Test</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/test"">http://" + String(getIP(debugGlobal)) + "/test</a></td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
+  cad += "<tr><td>Reinicia el controlador.</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/restart"">http://" + String(getIP(debugGlobal)) + "/restart</a></td></tr>";
+  cad += "<tr><td>Informacion del Hw del sistema</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/info"">http://" + String(getIP(debugGlobal)) + "/info</a></td></tr>";
   cad += "</table>";
   cad +="<BR><BR>";
   cad += "vueltas= " + String(vuelta) + " / " + String(UINT16_MAX);
+  cad += pieHTML;
+  
   server.send(200, "text/html", cad);
   }
 
@@ -218,6 +221,33 @@ void handleInfo(void)
     }
   cad += "-----------------------------------------------<BR>";  
   
+  cad += "<BR>-----------------Contadores info-----------------<BR>";
+  cad += "multiplicadorAnchoIntervalo: ";
+  cad += String(multiplicadorAnchoIntervalo);
+  cad += "<BR>";     
+  cad += "anchoIntervalo: ";
+  cad += String(anchoIntervalo);
+  cad += "<BR>";   
+  cad += "frecuenciaOTA: ";
+  cad += String(frecuenciaOTA);
+  cad += "<BR>";   
+  cad += "frecuenciaServidorWeb: ";
+  cad += String(frecuenciaServidorWeb);
+  cad += "<BR>";   
+  cad += "frecuenciaOrdenes: ";
+  cad += String(frecuenciaOrdenes);
+  cad += "<BR>"; 
+  cad += "frecuenciaMQTT: ";
+  cad += String(frecuenciaMQTT);
+  cad += "<BR>";
+  cad += "frecuenciaEnvioDatos: ";
+  cad += String(frecuenciaEnvioDatos);
+  cad += "<BR>";  
+  cad += "frecuenciaWifiWatchdog: ";
+  cad += String(frecuenciaWifiWatchdog); 
+  cad += "<BR>";  
+  cad += "-----------------------------------------------<BR>"; 
+ 
   cad += "<BR>-----------------WiFi info-----------------<BR>";
   cad += "SSID: " + nombreSSID();
   cad += "<BR>";    

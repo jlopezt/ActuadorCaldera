@@ -4,6 +4,6 @@
 	"ID_MQTT": "actuador",
 	"usuarioMQTT": "usuario", 
 	"passwordMQTT": "password", 
-	"topicRoot": "casa",
+	"topicRoot": "casaPre",
 	"publicarEstado": 1
 }

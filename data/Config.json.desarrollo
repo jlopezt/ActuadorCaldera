@@ -2,5 +2,14 @@
 "NivelActivo":1,
 "IPControlador": "10.68.1.90",
 "IPActuador": "10.68.1.91",
-"IPGateway":"10.68.1.1"
+"IPGateway":"10.68.1.1",
+"ahorroEnergia": 0, 
+"multiplicadorAnchoIntervalo": 5, 
+"anchoIntervalo": 100, 
+"frecuenciaOTA": 5, 
+"frecuenciaServidorWeb": 1, 
+"frecuenciaOrdenes": 2, 
+"frecuenciaMQTT": 10, 
+"frecuenciaEnvioDatos": 50,
+"frecuenciaWifiWatchdog": 100  
 }

@@ -10,7 +10,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.3.1 (ESP8266v2.4.2 OTA|MQTT)"
+#define VERSION "1.4.2 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
 #define PUERTO_WEBSERVER 80
 #define MAX_RELES        2 //numero maximo de reles soportado
 
@@ -32,11 +32,14 @@
 #define LEDS_PIN       1 //Pin del led de desborde de tiempo
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
-#define ANCHO_INTERVALO         100 //Ancho en milisegundos de la rodaja de tiempo
-#define FRECUENCIA_OTA            5 //cada cuantas vueltas de loop atiende las acciones
-#define FRECUENCIA_SERVIDOR_WEB   1 //cada cuantas vueltas de loop atiende el servidor web
-#define FRECUENCIA_MQTT          10 //cada cuantas vueltas de loop envia y lee del broket MQTT
-#define FRECUENCIA_ORDENES        2 //cada cuantas vueltas de loop atiende las ordenes via serie 
+#define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
+#define ANCHO_INTERVALO          100 //Ancho en milisegundos de la rodaja de tiempo
+#define FRECUENCIA_OTA             5 //cada cuantas vueltas de loop atiende las acciones
+#define FRECUENCIA_SERVIDOR_WEB    1 //cada cuantas vueltas de loop atiende el servidor web
+#define FRECUENCIA_MQTT           10 //cada cuantas vueltas de loop envia y lee del broket MQTT
+#define FRECUENCIA_ORDENES         2 //cada cuantas vueltas de loop atiende las ordenes via serie 
+#define FRECUENCIA_ENVIO_DATOS   300 //cada cuantas vueltas de loop envia al broker el estado de E/S
+#define FRECUENCIA_WIFI_WATCHDOG 100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
 #include <ESP8266WiFi.h>
@@ -57,6 +60,18 @@ int nivelActivo=LOW; //Se activa con HIGH por defecto
 String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
+uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
+time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
+
+//Contadores
+uint16_t multiplicadorAnchoIntervalo=5;
+uint16_t anchoIntervalo=100;
+uint16_t frecuenciaOTA=5;
+uint16_t frecuenciaServidorWeb=1;
+uint16_t frecuenciaOrdenes=2;
+uint16_t frecuenciaMQTT=50;
+uint16_t frecuenciaEnvioDatos=100;
+uint16_t frecuenciaWifiWatchdog=100;
 
 void setup()
   {
@@ -72,7 +87,7 @@ void setup()
 
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
-  inicializaConfiguracion(debugGlobal);
+  if(!inicializaConfiguracion(debugGlobal)) Serial.printf("Error al recuperar configuracion general.\nIniciando con valores por defecto.\n");
 
   //Wifi
   Serial.println("Init WiFi -----------------------------------------------------------------------");
@@ -81,7 +96,7 @@ void setup()
     /*----------------Inicializaciones que necesitan red-------------*/
     //OTA
     Serial.println("Init OTA -----------------------------------------------------------------------");
-    iniializaOTA(debugGlobal);
+    inicializaOTA(debugGlobal);
     //MQTT
     Serial.println("Init MQTT -----------------------------------------------------------------------");
     inicializaMQTT();
@@ -109,29 +124,30 @@ void setup()
 void  loop()
   {  
   //referencia horaria de entrada en el bucle
-  time_t EntradaBucle=0;
-  EntradaBucle=millis();//Hora de entrada en la rodaja de tiempo
+  time_t EntradaBucle=millis();//Hora de entrada en la rodaja de tiempo
 
   //------------- EJECUCION DE TAREAS --------------------------------------
   //Acciones a realizar en el bucle   
   //Prioridad 0: OTA es prioritario.
-  if ((vuelta % FRECUENCIA_OTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
+  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
   //Prioridad 3: Interfaces externos de consulta    
-  if ((vuelta % FRECUENCIA_SERVIDOR_WEB)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % FRECUENCIA_MQTT)==0) atiendeMQTT(debugGlobal);      
-  if ((vuelta % FRECUENCIA_ORDENES)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
+  if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
+  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT(debugGlobal);
+  if ((vuelta % frecuenciaEnvioDatos)==0) enviaDatos(debugGlobal); //publica via MQTT los datos de entradas y salidas, segun configuracion  
+  if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
+  if ((vuelta % frecuenciaWifiWatchdog)==0) WifiWD();  
   //------------- FIN EJECUCION DE TAREAS ---------------------------------  
 
   //sumo una vuelta de loop, si desborda inicializo vueltas a cero
   vuelta++;//sumo una vuelta de loop  
-  //if (vuelta>=MAX_VUELTAS) vuelta=0;  
-    
+      
   //Espero hasta el final de la rodaja de tiempo
-  while(millis()<EntradaBucle+ANCHO_INTERVALO)
+  while(millis()<EntradaBucle+anchoLoop)//while(millis()<EntradaBucle+ANCHO_INTERVALO)
     {
     if(millis()<EntradaBucle) break; //cada 49 dias el contador de millis desborda
-    delayMicroseconds(1000);
+    //delayMicroseconds(1000);
+    delay(1);
     }
   }
 
@@ -146,13 +162,35 @@ boolean inicializaConfiguracion(boolean debug)
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
   //cargo el valores por defecto
+  //Contadores
+  multiplicadorAnchoIntervalo=5;
+  anchoIntervalo=1200;
+  frecuenciaOTA=5;
+  frecuenciaServidorWeb=1;
+  frecuenciaOrdenes=2;
+  frecuenciaMQTT=50;
+  frecuenciaEnvioDatos=50;
+  frecuenciaWifiWatchdog=100; 
+  anchoLoop=anchoIntervalo; 
+  
+  ahorroEnergia=0; //ahorro de energia desactivado por defecto
   IPControlador.fromString("0.0.0.0");
   IPActuador.fromString("0.0.0.0");
   nivelActivo=LOW;  
   
-  if(leeFichero(GLOBAL_CONFIG_FILE, cad)) parseaConfiguracionGlobal(cad);
+  if(leeFichero(GLOBAL_CONFIG_FILE, cad)) 
+    {
+    if (parseaConfiguracionGlobal(cad)) 
+      {
+      //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
+      if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
+      else anchoLoop=multiplicadorAnchoIntervalo*anchoIntervalo;
 
-  return true;
+      return true;
+      }
+    }  
+    
+  return false;
   }
 
 /*********************************************/
@@ -168,6 +206,17 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
+    multiplicadorAnchoIntervalo=atol(json["multiplicadorAnchoIntervalo"]);
+    anchoIntervalo=atol(json["anchoIntervalo"]);
+    frecuenciaOTA=atol(json["frecuenciaOTA"]);
+    frecuenciaServidorWeb=atol(json["frecuenciaServidorWeb"]);
+    frecuenciaOrdenes=atol(json["frecuenciaOrdenes"]);
+    frecuenciaMQTT=atol(json["frecuenciaMQTT"]);
+    frecuenciaEnvioDatos=atol(json["frecuenciaEnvioDatos"]);
+    frecuenciaWifiWatchdog=atol(json["frecuenciaWifiWatchdog"]);  
+    
+    ahorroEnergia=atoi(json["ahorroEnergia"]);
+    
     IPControlador.fromString((const char *)json["IPControlador"]);
     IPActuador.fromString((const char *)json["IPActuador"]); 
     IPGateway.fromString((const char *)json["IPGateway"]);
@@ -176,6 +225,7 @@ boolean parseaConfiguracionGlobal(String contenido)
     else nivelActivo=HIGH;
     
     Serial.printf("Configuracion leida:\nNivelActivo: %i\nIP controlador: %s\nIP actuador: %s\nIP Gateway: %s\n", nivelActivo, IPControlador.toString().c_str(),IPActuador.toString().c_str(),IPGateway.toString().c_str());
+    Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnvioDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnvioDatos, frecuenciaWifiWatchdog);    
 //************************************************************************************************
     }
   }
@@ -191,7 +241,7 @@ String generaJsonConfiguracionNivelActivo(String configActual, int nivelAct)
   if(configActual=="") 
     {
     Serial.println("No existe el fichero. Se genera uno nuevo");
-    return "{\"NivelActivo\": \"" + String(nivelAct) + "\", \"IPControlador\": \"10.68.1.60\",\"IPPrimerTermometro\": \"10.68.1.62\",\"IPGateway\":\"10.68.1.1\"}";
+    return "{\"NivelActivo\": \"" + String(nivelAct) + "\", \"IPControlador\": \"10.68.1.60\",\"IPActuador\": \"10.68.1.61\",\"IPGateway\":\"10.68.1.1\",\"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 10,\"frecuenciaEnvioDatos\": 50,\"frecuenciaWifiWatchdog\": 100}";
     }
     
   DynamicJsonBuffer jsonBuffer;

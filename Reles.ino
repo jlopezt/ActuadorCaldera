@@ -104,4 +104,23 @@ int8_t conmutaRele(int8_t id, boolean estado_final, int debug)
   return 1;
   }
 
- 
+/**********************************************/
+/* Genera el json con el estado de los reles  */
+/**********************************************/
+String generaJsonEstado(void)
+  {
+  String cad="";
+  
+  //genero el json con el estado de los reles--> {"rele_0": 0,"rele_1": 1}
+  cad  = "{\n\t";
+  for(int8_t i=0;i<MAX_RELES;i++)
+    {
+    if(i>0) cad += ",\n\t"; //si no es la primera
+    cad += nombreRele(i);
+    cad += ": ";
+    cad += estadoRele(i);  
+    }
+  cad += "\n}";  
+
+  return cad;
+  } 
