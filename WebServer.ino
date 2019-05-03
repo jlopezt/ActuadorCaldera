@@ -28,9 +28,9 @@ void handleRoot()
   cad +="<BR><BR>";
   cad += "<table>";  
   cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
-  cad += "<tr><td>Estado de los reles</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>N/A</td><td><id_0>#<nombre_0>#<estado_0>|<id_1>#<nombre_1>#<estado_1></td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";
-  cad += "<tr><td>Activa rele</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele</td><td>id=<id></td><td><id>#<estado></td><td>Activa el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele?id=1</td><td>1|1</td></tr>";
-  cad += "<tr><td>Desactivarele</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele id=<id></td><td><id>#<estado></td><td>Desactiva el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0</td><td>0|0</td></tr>";  
+  cad += "<tr><td>Estado de los reles</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>N/A</td><td>id_0#nombre_0#estado_0|id_1#nombre_1#estado_1</td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";
+  cad += "<tr><td>Activa rele</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele</td><td>id=$id$</td><td>id#estado</td><td>Activa el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele?id=1</td><td>1|1</td></tr>";
+  cad += "<tr><td>Desactivarele</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele</td><td>id=$id$</td><td>id#estado</td><td>Desactiva el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0</td><td>0|0</td></tr>";  
   cad += "<tr><td>Test</td><td>http://" + String(getIP(debugGlobal)) + "/test</td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
   cad += "<tr><td>Reinicia el controlador.</td><td>http://" + String(getIP(debugGlobal)) + "/restart</td></tr>";
   cad += "<tr><td>Informacion del Hw del sistema</td><td>http://" + String(getIP(debugGlobal)) + "/info</td></tr>";

@@ -1,4 +1,4 @@
-/* 
+/*
  * Actuador para Termostato
  *
  * Actuador remoto
