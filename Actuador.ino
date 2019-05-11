@@ -10,7 +10,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.4.2 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
+#define VERSION "1.4.3 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
 #define PUERTO_WEBSERVER 80
 #define MAX_RELES        2 //numero maximo de reles soportado
 
@@ -133,7 +133,7 @@ void  loop()
   //Prioridad 2: Funciones de control.
   //Prioridad 3: Interfaces externos de consulta    
   if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
-  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT(debugGlobal);
+  if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
   if ((vuelta % frecuenciaEnvioDatos)==0) enviaDatos(debugGlobal); //publica via MQTT los datos de entradas y salidas, segun configuracion  
   if ((vuelta % frecuenciaOrdenes)==0) while(HayOrdenes(debugGlobal)) EjecutaOrdenes(debugGlobal); //Lee ordenes via serie
   if ((vuelta % frecuenciaWifiWatchdog)==0) WifiWD();  
@@ -206,28 +206,30 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
-    multiplicadorAnchoIntervalo=atol(json["multiplicadorAnchoIntervalo"]);
-    anchoIntervalo=atol(json["anchoIntervalo"]);
-    frecuenciaOTA=atol(json["frecuenciaOTA"]);
-    frecuenciaServidorWeb=atol(json["frecuenciaServidorWeb"]);
-    frecuenciaOrdenes=atol(json["frecuenciaOrdenes"]);
-    frecuenciaMQTT=atol(json["frecuenciaMQTT"]);
-    frecuenciaEnvioDatos=atol(json["frecuenciaEnvioDatos"]);
-    frecuenciaWifiWatchdog=atol(json["frecuenciaWifiWatchdog"]);  
+    multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo");
+    anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
+    frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
+    frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
+    frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
+    frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
+    frecuenciaEnvioDatos=json.get<uint16_t>("frecuenciaEnvioDatos");
+    frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");  
     
-    ahorroEnergia=atoi(json["ahorroEnergia"]);
-    
-    IPControlador.fromString((const char *)json["IPControlador"]);
-    IPActuador.fromString((const char *)json["IPActuador"]); 
-    IPGateway.fromString((const char *)json["IPGateway"]);
-    
+    ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
+
+    IPControlador.fromString(json.get<String>("IPControlador"));
+    IPActuador.fromString(json.get<String>("IPActuador"));
+    IPGateway.fromString(json.get<String>("IPGateway"));
+
     if((int)json["NivelActivo"]==0) nivelActivo=LOW;
     else nivelActivo=HIGH;
     
     Serial.printf("Configuracion leida:\nNivelActivo: %i\nIP controlador: %s\nIP actuador: %s\nIP Gateway: %s\n", nivelActivo, IPControlador.toString().c_str(),IPActuador.toString().c_str(),IPGateway.toString().c_str());
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnvioDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnvioDatos, frecuenciaWifiWatchdog);    
+    return true;
 //************************************************************************************************
     }
+  return false;    
   }
 
 /**********************************************************************/
