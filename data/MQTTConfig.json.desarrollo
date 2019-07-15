@@ -2,7 +2,7 @@
 	"IPBroker": "10.68.1.100", 
 	"puerto": 1883, 
 	"timeReconnectMQTT": 100,	
-	"ID_MQTT": "actuador",
+	"ID_MQTT": "actuadorPre",
 	"usuarioMQTT": "usuario", 
 	"passwordMQTT": "password", 
 	"topicRoot": "casaPre",

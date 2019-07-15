@@ -1,8 +1,8 @@
-{ 
-	"NivelActivo":0, 
-	"IPControlador": "10.68.1.60", 
-	"IPActuador": "10.68.1.61", 
-	"IPGateway":"10.68.1.1", 
+{
+	"NivelActivo":1,
+	"IPControlador": "10.68.0.60",
+	"IPActuador": "10.68.0.61",
+	"IPGateway":"10.68.1.1",
 	"ahorroEnergia": 0, 
 	"multiplicadorAnchoIntervalo": 5, 
 	"anchoIntervalo": 100, 
@@ -10,6 +10,6 @@
 	"frecuenciaServidorWeb": 1, 
 	"frecuenciaOrdenes": 2, 
 	"frecuenciaMQTT": 10, 
-	"frecuenciaEnvioDatos": 100,
+	"frecuenciaEnvioDatos": 50,
 	"frecuenciaWifiWatchdog": 100  
 }
