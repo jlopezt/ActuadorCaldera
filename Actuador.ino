@@ -6,20 +6,21 @@
  * Reles de conexion
  * Servicio web levantado en puerto ZZZ
  */
-#include <FS.h>                   //this needs to be first, or it all crashes and burns...
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.4.3 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)"
-#define PUERTO_WEBSERVER 80
-#define MAX_RELES        2 //numero maximo de reles soportado
-
+#define VERSION "1.5.0 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)" //subred 255.255.0.0 | candado | incializacion de ficheros | gestion de ficheros por web
 #define SEPARADOR '|'
 #define SUBSEPARADOR '#'
 #define KO               -1
 #define OK                0
 #define MAX_VUELTAS  UINT16_MAX// 32767 
 
+#define PUERTO_WEBSERVER 80
+#define MAX_RELES        2 //numero maximo de reles soportado
+
+//Nombres de ficheros
+#define FICHERO_CANDADO        "/Candado"
 #define GLOBAL_CONFIG_FILE     "/Config.json"
 #define GLOBAL_CONFIG_BAK_FILE "/Config.json.bak"
 #define WIFI_CONFIG_FILE       "/WiFiConfig.json"
@@ -41,27 +42,25 @@
 #define FRECUENCIA_ENVIO_DATOS   300 //cada cuantas vueltas de loop envia al broker el estado de E/S
 #define FRECUENCIA_WIFI_WATCHDOG 100 //cada cuantas vueltas comprueba si se ha perdido la conexion WiFi
 
+//Includes generales
+#include <FS.h>                   //this needs to be first, or it all crashes and burns...
 #include <TimeLib.h>  // download from: http://www.arduino.cc/playground/Code/Time
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
+//#include <ESP8266WiFi.h>
+//#include <ESP8266mDNS.h>
+//#include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-
-//IPs de los diferentes dispositivos 
-IPAddress IPControlador;
-IPAddress IPActuador;
-IPAddress IPGateway;
 
 //Indica si el rele se activa con HIGH o LOW
 int nivelActivo=LOW; //Se activa con HIGH por defecto
 
 /*-----------------Variables comunes---------------*/
-String nombre_dispoisitivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
+String nombre_dispositivo(NOMBRE_FAMILIA);//Nombre del dispositivo, por defecto el de la familia
 uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
 uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
 time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
+boolean candado=false; //Candado de configuracion. true implica que la ultima configuracion fue mal
 
 //Contadores
 uint16_t multiplicadorAnchoIntervalo=5;
@@ -85,6 +84,25 @@ void setup()
   Serial.println("*                                                             *");    
   Serial.println("***************************************************************");
 
+  Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
+  //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
+  inicializaFicheros(debugGlobal);
+
+  //Compruebo si existe candado, si existe la ultima configuracion fue mal
+  if(existeFichero(FICHERO_CANDADO)) 
+    {
+    Serial.printf("Candado puesto. Configuracion por defecto");
+    candado=true; 
+    debugGlobal=1;
+    }
+  else
+    {
+    candado=false;
+    //Genera candado
+    if(salvaFichero(FICHERO_CANDADO,"","JSD")) Serial.println("Candado creado");
+    else Serial.println("ERROR - No se pudo crear el candado");
+    }
+    
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
   if(!inicializaConfiguracion(debugGlobal)) Serial.printf("Error al recuperar configuracion general.\nIniciando con valores por defecto.\n");
@@ -114,6 +132,10 @@ void setup()
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
 
+  //Si ha llegado hasta aqui, todo ha ido bien y borro el candado
+  if(borraFichero(FICHERO_CANDADO))Serial.println("Candado borrado");
+  else Serial.println("ERROR - No se pudo borrar el candado");
+  
   Serial.println("***************************************************************");
   Serial.println("*                                                             *");
   Serial.println("*               Fin del setup del modulo                      *");
@@ -129,8 +151,9 @@ void  loop()
   //------------- EJECUCION DE TAREAS --------------------------------------
   //Acciones a realizar en el bucle   
   //Prioridad 0: OTA es prioritario.
-  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
+  if ((vuelta % frecuenciaOTA)==0) atiendeOTA();//ArduinoOTA.handle(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
+  //if ((vuelta % frecuenciaLogica)==0) actuaReles(); DESTAPAR SI EL ACTUADOR ES AUTONOMO, ESTE ESTA CONTROLADO POR EL CONTROLADOR VBIA MQTT
   //Prioridad 3: Interfaces externos de consulta    
   if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
   if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
@@ -174,8 +197,6 @@ boolean inicializaConfiguracion(boolean debug)
   anchoLoop=anchoIntervalo; 
   
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
-  IPControlador.fromString("0.0.0.0");
-  IPActuador.fromString("0.0.0.0");
   nivelActivo=LOW;  
   
   if(leeFichero(GLOBAL_CONFIG_FILE, cad)) 
@@ -217,14 +238,10 @@ boolean parseaConfiguracionGlobal(String contenido)
     
     ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
 
-    IPControlador.fromString(json.get<String>("IPControlador"));
-    IPActuador.fromString(json.get<String>("IPActuador"));
-    IPGateway.fromString(json.get<String>("IPGateway"));
-
     if((int)json["NivelActivo"]==0) nivelActivo=LOW;
     else nivelActivo=HIGH;
     
-    Serial.printf("Configuracion leida:\nNivelActivo: %i\nIP controlador: %s\nIP actuador: %s\nIP Gateway: %s\n", nivelActivo, IPControlador.toString().c_str(),IPActuador.toString().c_str(),IPGateway.toString().c_str());
+    Serial.printf("Configuracion leida:\nNivelActivo: %i\n", nivelActivo);
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnvioDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnvioDatos, frecuenciaWifiWatchdog);    
     return true;
 //************************************************************************************************
@@ -243,7 +260,7 @@ String generaJsonConfiguracionNivelActivo(String configActual, int nivelAct)
   if(configActual=="") 
     {
     Serial.println("No existe el fichero. Se genera uno nuevo");
-    return "{\"NivelActivo\": \"" + String(nivelAct) + "\", \"IPControlador\": \"10.68.1.60\",\"IPActuador\": \"10.68.1.61\",\"IPGateway\":\"10.68.1.1\",\"ahorroEnergia\": 0,\"multiplicadorAnchoIntervalo\": 5,\"anchoIntervalo\": 100,\"frecuenciaOTA\": 5,\"frecuenciaServidorWeb\": 1,\"frecuenciaOrdenes\": 2,\"frecuenciaMQTT\": 10,\"frecuenciaEnvioDatos\": 50,\"frecuenciaWifiWatchdog\": 100}";
+    return "{\"NivelActivo\": \"" + String(nivelAct) + "}";
     }
     
   DynamicJsonBuffer jsonBuffer;
@@ -254,10 +271,7 @@ String generaJsonConfiguracionNivelActivo(String configActual, int nivelAct)
     Serial.println("parsed json");          
 
 //******************************Parte especifica del json a leer********************************
-    json["NivelActivo"]=nivelAct;
-//    json["IPControlador"]=IPControlador.toString().c_str();
-//    json["IPPrimerTermometro"]=IPSatelites[0].toString().c_str();
-//    json["IPGateway"]=IPGateway.toString().c_str();   
+    json["NivelActivo"]=nivelAct;  
 //************************************************************************************************
 
     json.printTo(salida);//pinto el json que he creado
@@ -266,29 +280,3 @@ String generaJsonConfiguracionNivelActivo(String configActual, int nivelAct)
 
   return salida;  
   } 
-  
-///////////////FUNCIONES COMUNES/////////////////////
-/********************************************/
-/*  Genera una cadena con todas las IPs     */
-/********************************************/
-String leerIPs(void)
-  {
-  String cad="";
-
-  cad =  IPControlador.toString();
-  cad += "\n";
-  cad += IPActuador.toString();
-  cad += "\n";
-  
-  return cad;
-  }
-
-/*************************************************/
-/*  Dado un long, lo paso a binario y cambio los */
-/*  bits pares. Devuelve el nuevo valor          */ 
-/*************************************************/
-int generaId(int id_in)
-  {
-  const long mascara=43690;
-  return (id_in^mascara);
-  }
