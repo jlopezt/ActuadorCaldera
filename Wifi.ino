@@ -126,7 +126,7 @@ boolean inicializaWifi(boolean debug)
   if(recuperaDatosWiFi(debug))
     {
     //Configuro la IP fija
-    if (wifiIP!=(0,0,0,0) && wifiGW!=(0,0,0,0))
+    if (wifiIP!=IPAddress(0,0,0,0) && wifiGW!=IPAddress(0,0,0,0))
       {
       Serial.printf("Datos WiFi: IP fija-> %s, GW-> %s, subnet-> %s, DNS1-> %s, DNS2-> %s\n",wifiIP.toString().c_str(), wifiGW.toString().c_str(), wifiNet.toString().c_str(), wifiDNS1.toString().c_str(), wifiDNS2.toString().c_str());
       WiFi.config(wifiIP, wifiGW, wifiNet, wifiDNS1, wifiDNS2);
@@ -193,7 +193,7 @@ boolean conectaAutodetect(boolean debug)
   //wifiManager.setAPCallback(miAPCallback);//llamada cuando se actie el portal de configuracion
   
   //Si se ha configurado IP fija
-  if (wifiIP!=(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
+  if (wifiIP!=IPAddress(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
 
   if (!wifiManager.startConfigPortal(("AP_"+nombre_dispositivo).c_str())) 
     {

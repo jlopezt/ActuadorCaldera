@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.5.0 (ESP8266v2.4.2 OTA|json|MQTT|Cont. dinamicos)" //subred 255.255.0.0 | candado | incializacion de ficheros | gestion de ficheros por web
+#define VERSION "1.5.0 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //ESP8266v2.5.1
 #define SEPARADOR '|'
 #define SUBSEPARADOR '#'
 #define KO               -1
