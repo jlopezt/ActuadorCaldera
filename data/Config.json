@@ -1,8 +1,6 @@
 {
 	"NivelActivo":0,
-	"IPControlador": "10.68.0.60",
-	"IPActuador": "10.68.0.61",
-	"IPGateway":"10.68.1.1",
+
 	"ahorroEnergia": 0, 
 	"multiplicadorAnchoIntervalo": 5, 
 	"anchoIntervalo": 100, 
