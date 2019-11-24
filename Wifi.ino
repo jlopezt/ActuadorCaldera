@@ -69,11 +69,11 @@ boolean recuperaDatosWiFi(boolean debug)
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
   //cargo el valores por defecto
-  wifiIP=(0,0,0,0);
-  wifiGW=(0,0,0,0);
-  wifiNet=(0,0,0,0);
-  wifiDNS1=(0,0,0,0);
-  wifiDNS2=(0,0,0,0);
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
    
   //if(!leeFicheroConfig(WIFI_CONFIG_FILE, cad)) 
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
@@ -82,7 +82,7 @@ boolean recuperaDatosWiFi(boolean debug)
     Serial.printf("No existe fichero de configuracion WiFi\n");
     //cad="{\"wifi\": [ {\"ssid\": \"BASE0\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE1\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE2\" ,\"password\": \"11223344556677889900abcdef\"}, {\"ssid\": \"BASE-1\",\"password\": \"11223344556677889900abcdef\"}]}";
     cad="{\"wifiIP_PrimerSatelite\": \"0.0.0.0\",\"wifiGW\":\"0.0.0.0\",\"wifiNet\": \"0.0.0.0\",\"wifiDNS1\":\"0.0.0.0\",\"wifiDNS2\": \"0.0.0.0\",\"wifi\": []}";
-    if(salvaFicheroConfig(WIFI_CONFIG_FILE, WIFI_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion WiFi creado por defecto\n");
+    //if(salvaFicheroConfig(WIFI_CONFIG_FILE, WIFI_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion WiFi creado por defecto\n");
     }
 
   return(parseaConfiguracionWifi(cad));
@@ -105,8 +105,9 @@ boolean parseaConfiguracionWifi(String contenido)
     if (json.containsKey("wifiNet")) wifiNet.fromString((const char *)json["wifiNet"]); 
     if (json.containsKey("wifiDNS1")) wifiDNS1.fromString((const char *)json["wifiDNS1"]);
     if (json.containsKey("wifiDNS2")) wifiDNS2.fromString((const char *)json["wifiDNS2"]);
+    
     Serial.printf("Configuracion leida:\nIP actuador: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
-
+    
     JsonArray& wifi = json["wifi"];
     for(uint8_t i=0;i<wifi.size();i++)
       {
@@ -123,34 +124,40 @@ boolean parseaConfiguracionWifi(String contenido)
 
 boolean inicializaWifi(boolean debug)
   {
+  //Desconecto si esta conectado
+  WiFi.disconnect(true);//(false);   
+  //No reconecta a la ultima WiFi que se conecto
+  WiFi.persistent(false);  
+  //Activo el modo de autoreconexion nuevo en version 1.5 (con el cambio a esp8266 2.4.2)
+  WiFi.setAutoReconnect(true);   
+  //Activo el modo solo estacion, no access point
+  WiFi.mode(WIFI_OFF);
+  WiFi.mode(WIFI_STA);
+  
   if(recuperaDatosWiFi(debug))
-    {
-    //Configuro la IP fija
-    if (wifiIP!=IPAddress(0,0,0,0) && wifiGW!=IPAddress(0,0,0,0))
-      {
-      Serial.printf("Datos WiFi: IP fija-> %s, GW-> %s, subnet-> %s, DNS1-> %s, DNS2-> %s\n",wifiIP.toString().c_str(), wifiGW.toString().c_str(), wifiNet.toString().c_str(), wifiDNS1.toString().c_str(), wifiDNS2.toString().c_str());
-      WiFi.config(wifiIP, wifiGW, wifiNet, wifiDNS1, wifiDNS2);
-      }
-    else Serial.println("No hay IP fija");
-
-    //Activo el modo de autoreconexion nuevo en version 1.5 (con el cambio a esp8266 2.4.2)
-    WiFi.setAutoReconnect(true);
-    
+    {   
     //Modo ahorro energia
-    WiFi.mode(WIFI_STA);//Solo funciona el light_sleep en este modo
     //if(ahorroEnergia==1) wifi_set_sleep_type(LIGHT_SLEEP_T); //activado el ahorro de energia
     //else wifi_set_sleep_type(NONE_SLEEP_T); //desactivado el ahorro de energia OJO SE QUEDA EN SUSPENSION TAMBIEN
 
     Serial.println("Conectando multibase");
     if (conectaMultibase(debug)) 
       {
+      //Configuro la IP fija
+      if (wifiIP!=IPAddress(0,0,0,0) && wifiGW!=IPAddress(0,0,0,0))
+        {
+        Serial.printf("Datos WiFi: IP fija-> %s, GW-> %s, subnet-> %s, DNS1-> %s, DNS2-> %s\n",wifiIP.toString().c_str(), wifiGW.toString().c_str(), wifiNet.toString().c_str(), wifiDNS1.toString().c_str(), wifiDNS2.toString().c_str());
+        WiFi.config(wifiIP, wifiGW, wifiNet, wifiDNS1, wifiDNS2);
+        }
+      else Serial.println("No hay IP fija");
+
       Serial.println("------------------------WiFi conectada (configuracion almacenada)--------------------------------------");
       Serial.println("WiFi conectada");
       WiFi.printDiag(Serial);
       Serial.print("IP : ");
       Serial.println(WiFi.localIP());
       Serial.println("-------------------------------------------------------------------------------------------------------");
-
+          
       return true;
       }
     }
@@ -222,6 +229,7 @@ boolean conectaMultibase(boolean debug)
   {
   // wait for WiFi connection
   int time_out=0;
+
   while(WiFiMulti.run()!=WL_CONNECTED)
     {
     Serial.println("(Multi) Conectando Wifi...");  

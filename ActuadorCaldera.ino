@@ -10,8 +10,8 @@
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
 #define VERSION "1.5.0 (ESP8266v2.5.1 OTA|json|MQTT|Cont. dinamicos)" //ESP8266v2.5.1
-#define SEPARADOR '|'
-#define SUBSEPARADOR '#'
+#define SEPARADOR        '|'
+#define SUBSEPARADOR     '#'
 #define KO               -1
 #define OK                0
 #define MAX_VUELTAS  UINT16_MAX// 32767 
@@ -83,7 +83,9 @@ void setup()
   Serial.println("*             Inicio del setup del modulo                     *");
   Serial.println("*                                                             *");    
   Serial.println("***************************************************************");
-
+  
+  Serial.printf("\nMotivo del reinicio: %s\n",ESP.getResetReason().c_str());
+  
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
@@ -151,7 +153,7 @@ void  loop()
   //------------- EJECUCION DE TAREAS --------------------------------------
   //Acciones a realizar en el bucle   
   //Prioridad 0: OTA es prioritario.
-  if ((vuelta % frecuenciaOTA)==0) atiendeOTA();//ArduinoOTA.handle(); //Gestion de actualizacion OTA
+  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle();//atiendeOTA(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
   //if ((vuelta % frecuenciaLogica)==0) actuaReles(); DESTAPAR SI EL ACTUADOR ES AUTONOMO, ESTE ESTA CONTROLADO POR EL CONTROLADOR VBIA MQTT
   //Prioridad 3: Interfaces externos de consulta    

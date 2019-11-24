@@ -21,26 +21,26 @@ Funcines que provee al libreria:
   void handle();  //Call this in loop() to run the service
   int getCommand();  //Gets update command type after OTA has started. Either U_FLASH or U_SPIFFS
 **********************************************************************/
+boolean inicializaOTA(boolean debug)
+  {    
+  //OTA
+  ArduinoOTA.setPort(8266);
+  ArduinoOTA.setRebootOnSuccess(true);
+  ArduinoOTA.setPassword((const char *)"88716");// No authentication by default
 
-//#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
-
-void atiendeOTA(void)
-  {
-  ArduinoOTA.handle(); 
-  }
+  //Configuramos las funciones CallBack
+  ArduinoOTA.onStart(inicioOTA);
+  ArduinoOTA.onEnd(finOTA);
+  ArduinoOTA.onProgress(progresoOTA);
+  ArduinoOTA.onError(errorOTA);
   
+  //iniciamos la gestion OTA
+  ArduinoOTA.begin();
+  }
+
 void inicioOTA(void)
   {
   Serial.println("Actualizacion OTA");
-/*  String tipo;
-  if (ArduinoOTA.getCommand() == U_FLASH)
-    tipo = "sketch";
-  else // U_SPIFFS
-    tipo = "filesystem";
-
-  // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-  Serial.println("Actualizando " + tipo);  */
   }
   
 void finOTA(void)
@@ -65,22 +65,4 @@ void errorOTA(ota_error_t error)
   else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
   else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
   else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  }
-
-boolean inicializaOTA(boolean debug)
-  {    
-  //OTA
-  ArduinoOTA.setPort(8266);
-  ArduinoOTA.setRebootOnSuccess(true);
-  
-  ArduinoOTA.setPassword((const char *)"88716");// No authentication by default
-
-  //Configuramos las funciones CallBack
-  ArduinoOTA.onStart(inicioOTA);
-  ArduinoOTA.onEnd(finOTA);
-  ArduinoOTA.onProgress(progresoOTA);
-  ArduinoOTA.onError(errorOTA);
-  
-  //iniciamos la gestion OTA
-  ArduinoOTA.begin();
   }
