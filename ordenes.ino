@@ -294,6 +294,10 @@ void func_comando_reset(int iParametro, char* sParametro, float fParametro)//"re
   
 void func_comando_info(int iParametro, char* sParametro, float fParametro)//"info")
   {
+  Serial.printf("\n-----------------info version----------------\n");  
+  Serial.printf("Version: %s\n",VERSION);
+  Serial.printf("-----------------------------------------------\n");  
+  
   Serial.printf("\n-----------------info logica-----------------\n");
   Serial.printf("IP: %s\n", String(getIP(debugGlobal)).c_str());
   Serial.printf("nivelActivo: %s\n", String(nivelActivo).c_str());
