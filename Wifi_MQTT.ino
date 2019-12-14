@@ -220,7 +220,7 @@ void procesaTopicOrdenes(char* topic, byte* payload, unsigned int length)
   /**********************Fin JSON***********************/    
 
   //Ejecuta la orden sobre el rele
-  if(conmutaRele(id, estado, debugGlobal)==OK) Serial.printf("Rele conmutado\n");
+  if(conmutaRele(id, estado, debugGlobal)==OK) if(debugGlobal) Serial.printf("Rele conmutado\n");
   }
 
 /***************************************************/

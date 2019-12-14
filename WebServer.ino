@@ -62,6 +62,8 @@ void handleRoot()
   
 /***********************************/
   cad +="<BR><BR>";
+  cad += "Estado Actual: " + generaJsonEstado();
+  cad +="<BR><BR>";
   cad += "<table>";  
   cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
   cad += "<tr><td>Estado de los reles</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/estado"">http://" + String(getIP(debugGlobal)) + "/estado</a></td><td>N/A</td><td>id_0#nombre_0#estado_0|id_1#nombre_1#estado_1</td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";

@@ -1,0 +1,32 @@
+{
+  "Reles": [	
+    {
+    "Dx":  5, 
+    "DxLed": 1,
+    "nombre": "Calefaccion", 
+    "inicio": "off",
+    "Estados": [
+      {"valor": 0, "texto": "Calefaccion apagada."},
+      {"valor": 1, "texto": "Calefaccion encendida."}
+      ],
+    "Mensajes": [
+      {"valor": 0, "texto": "Apago la calefaccion."},
+      {"valor": 1, "texto": "Enciendo la calefaccion."}
+      ]
+    },
+    {
+    "Dx":  6, 
+    "DxLed": 2,
+    "nombre": "Otros", 
+    "inicio": "on",
+    "Estados": [
+      {"valor": 0, "texto": "Modulo de calefaccion conectado."},
+      {"valor": 1, "texto": "Modulo de calefaccion desconectado."}
+      ],
+    "Mensajes": [
+      {"valor": 0, "texto": "Se ha desconectado el control de la calefaccion."},
+      {"valor": 1, "texto": "Se ha conectado el control de la calefaccion."}
+      ]
+    }
+  ]
+}

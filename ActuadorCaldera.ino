@@ -23,14 +23,12 @@
 #define FICHERO_CANDADO        "/Candado"
 #define GLOBAL_CONFIG_FILE     "/Config.json"
 #define GLOBAL_CONFIG_BAK_FILE "/Config.json.bak"
+#define RELES_CONFIG_FILE      "/RelesConfig.json"
+#define RELES_CONFIG_BAK_FILE  "/RelesConfig.json.bak"
 #define WIFI_CONFIG_FILE       "/WiFiConfig.json"
 #define WIFI_CONFIG_BAK_FILE   "/WiFiConfig.json.bak"
 #define MQTT_CONFIG_FILE       "/MQTTConfig.json"
 #define MQTT_CONFIG_BAK_FILE   "/MQTTConfig.json.bak"
-
-//Definiciopn de pines
-#define RELES_PIN      5 //es el Dx Pin del primer rele, los demas consecutivos
-#define LEDS_PIN       1 //Pin del led de desborde de tiempo
 
 // Una vuela de loop son ANCHO_INTERVALO segundos 
 #define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
