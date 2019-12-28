@@ -24,6 +24,7 @@ Funcines que provee al libreria:
 boolean inicializaOTA(boolean debug)
   {    
   //OTA
+  ArduinoOTA.setHostname(nombre_dispositivo.c_str());
   ArduinoOTA.setPort(8266);
   ArduinoOTA.setRebootOnSuccess(true);
   ArduinoOTA.setPassword((const char *)"88716");// No authentication by default
