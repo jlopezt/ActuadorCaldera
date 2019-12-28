@@ -5,7 +5,6 @@
 	"multiplicadorAnchoIntervalo": 5, 
 	"anchoIntervalo": 100, 
 	"frecuenciaOTA": 5, 
-	"frecuenciaLogica": 10,
 	"frecuenciaServidorWeb": 1, 
 	"frecuenciaOrdenes": 2, 
 	"frecuenciaMQTT": 10, 

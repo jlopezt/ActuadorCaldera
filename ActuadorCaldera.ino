@@ -34,7 +34,6 @@
 #define MULTIPLICADOR_ANCHO_INTERVALO 5 //Multiplica el ancho del intervalo para mejorar el ahorro de energia
 #define ANCHO_INTERVALO          100 //Ancho en milisegundos de la rodaja de tiempo
 #define FRECUENCIA_OTA             5 //cada cuantas vueltas de loop atiende las acciones
-#define FRECUENCIA_LOGICA         10 //cada cuantas vueltas de loop atiende la  logica de los reles
 #define FRECUENCIA_SERVIDOR_WEB    1 //cada cuantas vueltas de loop atiende el servidor web
 #define FRECUENCIA_MQTT           10 //cada cuantas vueltas de loop envia y lee del broket MQTT
 #define FRECUENCIA_ORDENES         2 //cada cuantas vueltas de loop atiende las ordenes via serie 
@@ -65,7 +64,6 @@ boolean candado=false; //Candado de configuracion. true implica que la ultima co
 uint16_t multiplicadorAnchoIntervalo=5;
 uint16_t anchoIntervalo=100;
 uint16_t frecuenciaOTA=5;
-uint16_t frecuenciaLogica=10;
 uint16_t frecuenciaServidorWeb=1;
 uint16_t frecuenciaOrdenes=2;
 uint16_t frecuenciaMQTT=50;
@@ -155,7 +153,7 @@ void  loop()
   //Prioridad 0: OTA es prioritario.
   if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle();//atiendeOTA(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
-  if ((vuelta % frecuenciaLogica)==0) actuaReles(debugGlobal);
+  //if ((vuelta % frecuenciaLogica)==0) actuaReles(); DESTAPAR SI EL ACTUADOR ES AUTONOMO, ESTE ESTA CONTROLADO POR EL CONTROLADOR VBIA MQTT
   //Prioridad 3: Interfaces externos de consulta    
   if ((vuelta % frecuenciaServidorWeb)==0) webServer(debugGlobal); //atiende el servidor web
   if ((vuelta % frecuenciaMQTT)==0) atiendeMQTT();
@@ -232,7 +230,6 @@ boolean parseaConfiguracionGlobal(String contenido)
     multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo");
     anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
     frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
-    frecuenciaLogica=json.get<uint16_t>("frecuenciaLogica");
     frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
     frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
     frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
