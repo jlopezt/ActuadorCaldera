@@ -3,8 +3,9 @@
 /*  Control de reles para el termostato  */
 /*                                       */
 /*****************************************/
-#define TOPIC_MENSAJES "mensajes"
+#define TOPIC_MENSAJES          "mensajes"
 
+/*******************Definicion de tipos y variables comunes*********************/
 typedef struct{
   //int8_t id;
   String nombre;
@@ -21,6 +22,11 @@ String nombre_reles[MAX_RELES];
 
 //tabla de pines GPIOs
 int8_t pinGPIOS[9]={16,5,4,0,2,14,12,13,15}; //tiene 9 puertos digitales, el indice es el puerto Dx y el valor el GPIO
+
+//Seguridad
+uint32_t contadorSeguridad=0;
+uint32_t inicioSeguridad=0; 
+/*******************Fin definicion de tipos y variables comunes*********************/
 
 /*********************************************/
 /* Inicializa los valores de los registros de*/
@@ -49,11 +55,14 @@ void inicializaReles()
     reles[i].mensajes[1]="paso a uno";
     }
 
+  contadorSeguridad=0; 
+  
   //leo la configuracion del fichero
   if(!recuperaDatosReles(debugGlobal)) Serial.println("Configuracion de los reles por defecto");
   else
     {  
     //Salidas
+    Serial.printf("Reles:\nContador de seguridad: %i\n",contadorSeguridad);    
     for(int8_t i=0;i<MAX_RELES;i++)
       {    
       if(reles[i].pin!=-1)
@@ -119,6 +128,9 @@ boolean parseaConfiguracionReles(String contenido)
 //******************************Parte especifica del json a leer********************************
   JsonArray& Reles = json["Reles"];
 
+  if(json["contadorSeguridad"].is<unsigned int>()) contadorSeguridad=json.get<unsigned int>("contadorSeguridad") * 1000;  
+  else contadorSeguridad=0;
+
   int8_t max;
   max=(Reles.size()<MAX_RELES?Reles.size():MAX_RELES);
   for(int8_t i=0;i<max;i++)
@@ -153,7 +165,7 @@ boolean parseaConfiguracionReles(String contenido)
       }
     }
 
-  Serial.printf("Reles:\n"); 
+  Serial.printf("Reles:\nContador de seguridad: %i\n",contadorSeguridad); 
   for(int8_t i=0;i<MAX_RELES;i++) 
     {
     Serial.printf("%01i: %s | pin: %i | inico: %i\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].inicio); 
@@ -175,12 +187,30 @@ boolean parseaConfiguracionReles(String contenido)
 
 /*************************************************/
 /*Logica de los reles:                           */
-/*Si esta activo para ese intervalo de tiempo(1) */
-/*Si esta por debajo de la tMin cierro rele      */
-/*si no abro rele                                */
+/*En modo actuador, solo sirve para verificar que*/
+/*ha llegado un aorden en los ultimos            */
+/*contadorSeguridad milisegundos                 */
+/*si no, activa la seguridad y desconecta todo   */
 /*************************************************/
-void actuaReles()
+void actuaReles(int debug)
   { 
+  uint32_t intervaloTrascurrido=0;
+
+  //calculo el tiempo desde que se inicio el intervalo de seguridada
+  if(millis()>inicioSeguridad) intervaloTrascurrido=millis()-inicioSeguridad; //normal
+  else intervaloTrascurrido=(UINT32_MAX-inicioSeguridad)+millis(); //si ha desbordado el contador de millis
+  if(debug) Serial.printf("intervaloTrascurrido: %li | inicioSeguridad: %li | millis: %li\n",intervaloTrascurrido,inicioSeguridad,millis());
+
+  //si se ha sobrepasado el tiempo de guarda, desconecto
+  if(intervaloTrascurrido>contadorSeguridad) 
+    {
+    Serial.printf("¡¡ATENCION!! Se desconecta por tiempo de proteccion\nIntervalo transcurrido: %i \| tiempo de guarda: %i\n",intervaloTrascurrido,contadorSeguridad);
+
+    //llevo todos al mismo estado que cuando se apaga el modulo, debe ser seguro
+    for(int8_t id=0;id<MAX_RELES;id++) conmutaRele(id,!nivelActivo,false);
+
+    //Desactivo el control de seguridad (Alarma de seguridad activada) hasta la proxima activacion de un rele por un modulo externo
+    }
   }
 
 /*************************************************/
@@ -213,6 +243,9 @@ String nombreRele(int8_t id)
 /*************************************************/
 int8_t conmutaRele(int8_t id, boolean estado_final, int debug)
   {
+  //registro el momento del ultimo cambio en un rele
+  inicioSeguridad=millis();
+    
   if(id <0 || id>=MAX_RELES) return KO; //Rele fuera de rango
   if(reles[id].pin==-1) return KO; //El rele no esta configurado
 
