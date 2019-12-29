@@ -217,6 +217,14 @@ void inicializaOrden(void)
   comandos[i].descripcion="Configuración de MQTT";
   comandos[i++].p_func_comando=func_comando_mqtt;
   
+  comandos[i].comando="GPIOH";
+  comandos[i].descripcion="Escribe estado en un GPIO";
+  comandos[i++].p_func_comando=func_comando_gpioH;
+  
+  comandos[i].comando="GPIOL";
+  comandos[i].descripcion="Escribe estado en un GPIO";
+  comandos[i++].p_func_comando=func_comando_gpioL;
+  
   //resto
   for(;i<MAX_COMANDOS;)
     {
@@ -477,5 +485,17 @@ void func_comando_contadores(int iParametro, char* sParametro, float fParametro)
 void func_comando_mqtt(int iParametro, char* sParametro, float fParametro)//"debug")
   {
   Serial.printf("Configuracion leida:\nID MQTT: %s\nIP broker: %s\nIP Puerto del broker: %i\ntimeReconnectMQTT: %i\nUsuario: %s\nPassword: %s\nTopic root: %s\nWill topic: %s\nWill msg: %s\nClean session: %i\ntopicOrdenes: %s\n", ID_MQTT.c_str(), IPBroker.toString().c_str(), puertoBroker, timeReconnectMQTT, usuarioMQTT.c_str(),passwordMQTT.c_str(),topicRoot.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(),String(WILL_MSG).c_str(), CLEAN_SESSION,topicOrdenes.c_str());
+  }  
+
+void func_comando_gpioH(int iParametro, char* sParametro, float fParametro)//"debug")
+  {
+  digitalWrite(iParametro, HIGH);  
+  Serial.printf("Escribe HIGH en el gpio %i\n", iParametro);  
+  }  
+
+void func_comando_gpioL(int iParametro, char* sParametro, float fParametro)//"debug")
+  {
+  digitalWrite(iParametro, LOW);  
+  Serial.printf("Escribe LOW en el gpio %i\n", iParametro);  
   }  
 /***************************** FIN funciones para comandos ******************************************/ 

@@ -1,5 +1,5 @@
 {
-	"IPBroker": "10.68.0.100", 
+	"IPBroker": "10.68.0.101", 
 	"puerto": 1883, 
 	"timeReconnectMQTT": 100,	
 	"ID_MQTT": "actuadorPre",

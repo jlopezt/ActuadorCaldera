@@ -3,7 +3,7 @@
 /*  Control de reles para el termostato  */
 /*                                       */
 /*****************************************/
-#define TOPIC_MENSAJES          "mensajes"
+#define TOPIC_MENSAJES          "mensajesXXX"
 
 /*******************Definicion de tipos y variables comunes*********************/
 typedef struct{
@@ -76,12 +76,12 @@ void inicializaReles()
         if(reles[i].inicio==1) 
           {
           digitalWrite(pinGPIOS[reles[i].pin], nivelActivo);  //lo inicializo a apagado
-          digitalWrite(pinGPIOS[reles[i].pinLed], nivelActivo);  //lo inicializo a apagado
+          digitalWrite(pinGPIOS[reles[i].pinLed], HIGH);  //lo inicializo encendido
           }
         else 
           {
           digitalWrite(pinGPIOS[reles[i].pin], !nivelActivo);  //lo inicializo a apagado 
-          digitalWrite(pinGPIOS[reles[i].pinLed], !nivelActivo);  //lo inicializo a apagado
+          digitalWrite(pinGPIOS[reles[i].pinLed], LOW);  //lo inicializo a apagado
           }
         
         Serial.printf("Nombre rele[%i]=%s | pin rele: %i | pin led: %i | inicio: %i |estado: %i\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].pinLed,reles[i].inicio,reles[i].estado);
@@ -137,8 +137,8 @@ boolean parseaConfiguracionReles(String contenido)
     { 
     JsonObject& rele = json["Reles"][i];
     reles[i].nombre=rele.get<String>("nombre");
-    reles[i].pin=rele.get<int8_t>("DxLed");
-    reles[i].pinLed=rele.get<int8_t>("Dx");
+    reles[i].pin=rele.get<int8_t>("Dx");
+    reles[i].pinLed=rele.get<int8_t>("DxLed");
 
     //Si de inicio debe estar activado o desactivado
     if(String((const char *)Reles[i]["inicio"])=="on") reles[i].inicio=1;
@@ -208,8 +208,6 @@ void actuaReles(int debug)
 
     //llevo todos al mismo estado que cuando se apaga el modulo, debe ser seguro
     for(int8_t id=0;id<MAX_RELES;id++) conmutaRele(id,!nivelActivo,false);
-
-    //Desactivo el control de seguridad (Alarma de seguridad activada) hasta la proxima activacion de un rele por un modulo externo
     }
   }
 
@@ -254,7 +252,7 @@ int8_t conmutaRele(int8_t id, boolean estado_final, int debug)
   //controlo el led asociado
   if (nivelActivo) digitalWrite(pinGPIOS[reles[id].pinLed], estado_final); 
   else digitalWrite(pinGPIOS[reles[id].pinLed], !estado_final); 
-  
+
   if(debug)
     {
     Serial.printf("id: %i; GPIO: %i; estado: ",(int)id,(int)pinGPIOS[reles[id].pin]);
