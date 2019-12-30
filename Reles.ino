@@ -3,7 +3,7 @@
 /*  Control de reles para el termostato  */
 /*                                       */
 /*****************************************/
-#define TOPIC_MENSAJES          "mensajesXXX"
+#define NO_ENVIAR_MENSAJES          ""
 
 /*******************Definicion de tipos y variables comunes*********************/
 typedef struct{
@@ -12,6 +12,7 @@ typedef struct{
   int8_t estado;
   int8_t pin;             // Pin al que esta conectado el rele
   int8_t pinLed;          // Pin al que esta conectado el led
+  String topicMensajes;   // Topic al que mandar los mensajes de cambio de estado. El valor NO_ENVIAR_MENSAJES significa que no se manda
   int8_t inicio;          // modo inicial del rele "on"-->1/"off"-->0
   String nombreEstados[2];//Son salidas binarias, solo puede haber 2 mensajes. El 0 nombre del estado en valor 0 y el 1 nombre del estado en valor 1
   String mensajes[2];     //Son salidas binarias, solo puede haber 2 mensajes. El 0 cuando pasa a 0 y el 1 cuando pasa a 1
@@ -48,6 +49,7 @@ void inicializaReles()
     reles[i].estado=0;  
     reles[i].pin=-1;
     reles[i].pinLed=-1;
+    reles[i].topicMensajes=NO_ENVIAR_MENSAJES;
     reles[i].inicio=0;
     reles[i].nombreEstados[0]="0";
     reles[i].nombreEstados[1]="1";
@@ -84,7 +86,7 @@ void inicializaReles()
           digitalWrite(pinGPIOS[reles[i].pinLed], LOW);  //lo inicializo a apagado
           }
         
-        Serial.printf("Nombre rele[%i]=%s | pin rele: %i | pin led: %i | inicio: %i |estado: %i\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].pinLed,reles[i].inicio,reles[i].estado);
+        Serial.printf("Nombre rele[%i]=%s | pin rele: %i | pin led: %i | inicio: %i |estado: %i \ topic mensajes: %s\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].pinLed,reles[i].inicio,reles[i].estado,reles[i].topicMensajes.c_str());
         }
       }
     }  
@@ -139,6 +141,7 @@ boolean parseaConfiguracionReles(String contenido)
     reles[i].nombre=rele.get<String>("nombre");
     reles[i].pin=rele.get<int8_t>("Dx");
     reles[i].pinLed=rele.get<int8_t>("DxLed");
+    reles[i].topicMensajes=rele.get<String>("topicMensajes");
 
     //Si de inicio debe estar activado o desactivado
     if(String((const char *)Reles[i]["inicio"])=="on") reles[i].inicio=1;
@@ -168,7 +171,7 @@ boolean parseaConfiguracionReles(String contenido)
   Serial.printf("Reles:\nContador de seguridad: %i\n",contadorSeguridad); 
   for(int8_t i=0;i<MAX_RELES;i++) 
     {
-    Serial.printf("%01i: %s | pin: %i | inico: %i\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].inicio); 
+    Serial.printf("%01i: %s | pin: %i | inico: %i | topic mensajes: %s\n",i,reles[i].nombre.c_str(),reles[i].pin,reles[i].inicio,reles[i].topicMensajes.c_str()); 
     Serial.printf("Estados:\n");
     for(int8_t e=0;e<2;e++) 
       {
@@ -279,11 +282,14 @@ int8_t conmutaRele(int8_t id, boolean estado_final, int debug)
 void enviaMensajeSalida(int8_t id_salida, int8_t estado)
   {
   String mensaje="";
+  //Serial.printf("Envio de mensaje para la entrada con id %i y por cambiar a estado %i.\ntopic mensajes: %s\n",id_salida,estado,reles[id_salida].topicMensajes.c_str());
+  
+  if(reles[id_salida].topicMensajes==String(NO_ENVIAR_MENSAJES)) return; //no se envia mensaje
 
   mensaje="{\"origen\": \"" + reles[id_salida].nombre + "\",\"mensaje\":\"" + reles[id_salida].mensajes[estado] + "\"}";
-  Serial.printf("Envia mensaje para la entrada con id %i y por cambiar a estado %i. Mensaje: %s\n\n",id_salida,estado,reles[id_salida].mensajes[estado].c_str());
-  Serial.printf("A enviar: topic %s\nmensaje %s\n", TOPIC_MENSAJES,mensaje.c_str());
-  enviarMQTT(TOPIC_MENSAJES, mensaje);
+  //Serial.printf("Mensaje: %s\n\n",reles[id_salida].mensajes[estado].c_str());
+  //Serial.printf("A enviar topic: *%s*\nmensaje: *%s*\n", reles[id_salida].topicMensajes.c_str(),mensaje.c_str());
+  enviarMQTT(reles[id_salida].topicMensajes, mensaje);
   }
 
 /**********************************************/
