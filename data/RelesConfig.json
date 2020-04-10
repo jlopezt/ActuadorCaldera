@@ -14,7 +14,7 @@
       {"valor": 0, "texto": "Apago la calefaccion."},
       {"valor": 1, "texto": "Enciendo la calefaccion."}
       ],
-    "topicMensajes": ""
+    "topicMensajes": "mensajes"
     },
     {
     "Dx":  6, 
@@ -29,7 +29,7 @@
       {"valor": 0, "texto": "Se ha desconectado el control de la calefaccion."},
       {"valor": 1, "texto": "Se ha conectado el control de la calefaccion."}
       ],
-    "topicMensajes": ""
+    "topicMensajes": "mensajesXXX"
     }
   ]
 }
