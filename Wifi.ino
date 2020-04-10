@@ -26,6 +26,7 @@ IPAddress wifiDNS2(0, 0, 0, 0);
 
 const char* ssid;
 const char* password;
+int connection_time_out=TIME_OUT; //time out de conexion a la multibase
 
 ESP8266WiFiMulti WiFiMulti;
 
@@ -34,7 +35,7 @@ boolean conectado=false; //Si el portal de configuracion devolvio OK a la conexi
 void miSaveConfigCallback(void)
   {
   String cad="";
-  
+
   Serial.println("---------------------Salvando configuracion---------------");
   Serial.println("Valores que voy a salvar");
   Serial.print("SSID : ");
@@ -68,13 +69,6 @@ boolean recuperaDatosWiFi(boolean debug)
   String cad="";
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
-  //cargo el valores por defecto
-  wifiIP=IPAddress(0,0,0,0);
-  wifiGW=IPAddress(0,0,0,0);
-  wifiNet=IPAddress(0,0,0,0);
-  wifiDNS1=IPAddress(0,0,0,0);
-  wifiDNS2=IPAddress(0,0,0,0);
-   
   //if(!leeFicheroConfig(WIFI_CONFIG_FILE, cad)) 
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
     {
@@ -105,8 +99,10 @@ boolean parseaConfiguracionWifi(String contenido)
     if (json.containsKey("wifiNet")) wifiNet.fromString((const char *)json["wifiNet"]); 
     if (json.containsKey("wifiDNS1")) wifiDNS1.fromString((const char *)json["wifiDNS1"]);
     if (json.containsKey("wifiDNS2")) wifiDNS2.fromString((const char *)json["wifiDNS2"]);
+
+    if (json.containsKey("timeOut")) connection_time_out=json.get<int>("timeOut");
     
-    Serial.printf("Configuracion leida:\nIP actuador: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\n",wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str());    
+    Serial.printf("Configuracion leida:\nIP actuador: %s\nIP Gateway: %s\nIPSubred: %s\nIP DNS1: %s\nIP DNS2: %s\nTime-out: %i\n",wifiIP.toString().c_str(),wifiGW.toString().c_str(),wifiNet.toString().c_str(),wifiDNS1.toString().c_str(),wifiDNS2.toString().c_str(),connection_time_out);
     
     JsonArray& wifi = json["wifi"];
     for(uint8_t i=0;i<wifi.size();i++)
@@ -124,6 +120,13 @@ boolean parseaConfiguracionWifi(String contenido)
 
 boolean inicializaWifi(boolean debug)
   {
+  //cargo el valores por defecto
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
+       
   //Desconecto si esta conectado
   WiFi.disconnect(true);//(false);   
   //No reconecta a la ultima WiFi que se conecto
@@ -235,7 +238,7 @@ boolean conectaMultibase(boolean debug)
     Serial.println("(Multi) Conectando Wifi...");  
     delay(DELAY);  
     time_out += DELAY;
-    if (time_out>TIME_OUT) 
+    if (time_out>connection_time_out)//TIME_OUT)
       {
       if (debug) Serial.println("No se pudo conectar al Wifi...");    
       return FALSE; //No se ha conectado y sale con KO

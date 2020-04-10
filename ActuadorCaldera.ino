@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.5.3 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)" //ESP8266v2.5.1
+#define VERSION "1.5.4 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)" //ESP8266v2.5.1
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
