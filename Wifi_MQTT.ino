@@ -43,6 +43,7 @@ int8_t publicarEstado; //Flag para determinar si se envia el json con los valore
 WiFiClient espClient;
 PubSubClient clienteMQTT(espClient);
 
+boolean flagBloqueoMQTT=false; //flag para controlar si se atienden o no los mensajes de MQTT para activar desactivar los reles-->MODO PANICO
 /************************************************/
 /* Inicializa valiables y estado del bus MQTT   */
 /************************************************/
@@ -138,7 +139,10 @@ void callbackMQTT(char* topic, byte* payload, unsigned int length)
   
   //Para cada topic suscrito...  
   //if(cad.equalsIgnoreCase(topicRoot + topicOrdenes)) procesaTopicOrdenes(topic,payload,length);  
-  if(comparaTopics(topicRoot + topicOrdenes, topic)) procesaTopicOrdenes(topic,payload,length);    
+  if(comparaTopics(topicRoot + topicOrdenes, topic)) 
+    {
+    if(!bloqueoMQTT()) procesaTopicOrdenes(topic,payload,length);    
+    }
   //elseif(cad.equalsIgnoreCase(topicRoot + <topicSuscrito>)) <funcion de gestion>(topic,payload,length);  
   else if(cad.equalsIgnoreCase(TOPIC_PING)) respondePingMQTT(topic,payload,length);      
   //Si no machea el topic recibido con los sucritos lo tira (no deberia ocurrir)
@@ -440,3 +444,7 @@ String stateTexto(void)
       
   return (cad);
   }
+
+boolean bloqueoMQTT(void) {return flagBloqueoMQTT;}
+void activaBloqueoMQTT(void) {flagBloqueoMQTT=true;}
+void desactivaBloqueoMQTT(void) {flagBloqueoMQTT=false;}

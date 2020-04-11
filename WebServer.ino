@@ -9,37 +9,41 @@ Informacion del Hw del sistema http://IPControlador/info
 ************************************************************************************************/
 
 //enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS };
-#define IDENTIFICACION "Modulo Actuador. <BR>Version " + String(VERSION) + "." + "<BR>" //#define IDENTIFICACION "<BR><BR><BR><BR><BR>Modulo actuador. Version " + String(VERSION) + ".";
+#define IDENTIFICACION "Version " + String(VERSION) + "." + "<BR>"
+#define ROJO  String("#CC0000")
+#define VERDE String("#00CC00")
 
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 
 ESP8266WebServer server(PUERTO_WEBSERVER);
 
-String cabeceraHTML="<HTML><HEAD><TITLE>" + nombre_dispositivo + " </TITLE></HEAD><BODY><h1><a href=\"../\" target=\"_self\">" + nombre_dispositivo + "</a><br></h1>";
-String enlaces="<TABLE>\n<CAPTION>Enlaces</CAPTION>\n<TR><TD><a href=\"info\" target=\"_self\">Info</a></TD></TR>\n<TR><TD><a href=\"test\" target=\"_self\">Test</a></TD></TR>\n<TR><TD><a href=\"restart\" target=\"_self\">Restart</a></TD></TR>\n<TR><TD><a href=\"listaFicheros\" target=\"_self\">Lista ficheros</a></TD></TR>\n</TABLE>"; 
+String cabeceraHTML="<!DOCTYPE html><HTML><HEAD><TITLE>" + nombre_dispositivo + " </TITLE></HEAD><BODY><h1><a href=\"../\" target=\"_self\">" + nombre_dispositivo + "</a><br></h1>";
+String enlaces="<TABLE>\n<CAPTION>Enlaces</CAPTION>\n<TR><TD><a href=\"info\" target=\"_self\">Info</a></TD></TR>\n<TR><TD><a href=\"test\" target=\"_self\">Test</a></TD></TR>\n<TR><TD><a href=\"restart\" target=\"_self\">Restart</a></TD></TR>\n<TR><TD><a href=\"listaFicheros\" target=\"_self\">Lista ficheros</a></TD></TR>\n<TR><TD><a href=\"estado\" target=\"_self\">Estado</a></TD></TR>\n</TABLE>\n"; 
 String pieHTML="</BODY></HTML>";
 
 void inicializaWebServer(void)
   {
   //decalra las URIs a las que va a responder
-  server.on("/", handleRoot); //Responde con la iodentificacion del modulo
-  server.on("/web", handleWeb); //Servicio de estdo de reles en HTML
-  server.on("/estado", handleEstadoReles); //Servicio de estdo de reles
-  server.on("/activaRele", handleActivaRele); //Servicio de activacion de rele
-  server.on("/desactivaRele", handleDesactivaRele);  //Servicio de desactivacion de rele
+  server.on("/", HTTP_ANY, handleRoot); //Responde con la iodentificacion del modulo
+  server.on("/web", HTTP_ANY, handleWeb); //Servicio de estdo de reles en HTML
+  server.on("/estado", HTTP_ANY, handleEstadoReles); //Servicio de estdo de reles
+  server.on("/activaRele", HTTP_ANY, handleActivaRele); //Servicio de activacion de rele
+  server.on("/desactivaRele", HTTP_ANY, handleDesactivaRele);  //Servicio de desactivacion de rele
+//  server.on("/bloquear", HTTP_ANY, handleBloquear);  //Servicio de bloqueo de las salidas. Ignora lo que llega por MQTT
+//  server.on("/desbloquear", HTTP_ANY, handledesbloquear);  //Servicio de desbloqueo de las salidas. vuelve a procesar lo que llega por MQTT
   
-  server.on("/test", handleTest);  //URI de test
-  server.on("/reset", handleReset);  //URI de test  
-  server.on("/restart", handleRestart);  //URI de test
-  server.on("/info", handleInfo);  //URI de test
+  server.on("/test", HTTP_ANY, handleTest);  //URI de test
+  server.on("/reset", HTTP_ANY, handleReset);  //URI de test  
+  server.on("/restart", HTTP_ANY, handleRestart);  //URI de test
+  server.on("/info", HTTP_ANY, handleInfo);  //URI de test
   
   server.on("/listaFicheros", HTTP_ANY, handleListaFicheros);  //URI de leer fichero
-  server.on("/creaFichero", handleCreaFichero);  //URI de crear fichero
-  server.on("/borraFichero", handleBorraFichero);  //URI de borrar fichero
-  server.on("/leeFichero", handleLeeFichero);  //URI de leer fichero
+  server.on("/creaFichero", HTTP_ANY, handleCreaFichero);  //URI de crear fichero
+  server.on("/borraFichero", HTTP_ANY, handleBorraFichero);  //URI de borrar fichero
+  server.on("/leeFichero", HTTP_ANY, handleLeeFichero);  //URI de leer fichero
   server.on("/manageFichero", HTTP_ANY, handleManageFichero);  //URI de leer fichero  
-  server.on("/infoFS", handleInfoFS);  //URI de info del FS
+  server.on("/infoFS", HTTP_ANY, handleInfoFS);  //URI de info del FS
 
   server.onNotFound(handleNotFound);//pagina no encontrada
 
@@ -56,34 +60,126 @@ void handleRoot()
   {
   String cad="";
 
+  //Revisa si se pide bloquear las activaciones por mensajes MQTT
+  if(server.hasArg("accion"))
+    {    
+    if (server.arg("accion")=="desbloquear") desactivaBloqueoMQTT();
+    else if (server.arg("accion")=="bloquear") activaBloqueoMQTT();
+    }
+    
   cad += cabeceraHTML;
   //genero la respuesta por defecto
-  cad += IDENTIFICACION;
-  
-/***********************************/
-  cad +="<BR><BR>";
-  cad += "Estado Actual: " + generaJsonEstado();
-  cad +="<BR><BR>";
-  cad += "<table>";  
-  cad += "<tr><td>Servicio</td><td>URL</td><td>Formato entrada</td><td>Formato salida</td><td>Comentario</td><td>Ejemplo peticion</td><td>Ejemplo respuesta</td></tr>";
-  cad += "<tr><td>Estado de los reles</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/estado"">http://" + String(getIP(debugGlobal)) + "/estado</a></td><td>N/A</td><td>id_0#nombre_0#estado_0|id_1#nombre_1#estado_1</td><td>Devuelve el id de cada rele y su estado</td><td>http://" + String(getIP(debugGlobal)) + "/estado</td><td>1#1|2#0</td></tr>";
-  cad += "<tr><td>Activa rele</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/activaRele?id=0"">http://" + String(getIP(debugGlobal)) + "/activaRele?id=<b>id</b></a></td><td>N/A</td><td>id#estado</td><td>Activa el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/activaRele?id=1</td><td>1|1</td></tr>";
-  cad += "<tr><td>Desactivarele</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0"">http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=<b>id</b></a></td><td>N/A</td><td>id#estado</td><td>Desactiva el rele indicado y devuelve el estado leido</td><td>http://" + String(getIP(debugGlobal)) + "/desactivaRele?id=0</td><td>0|0</td></tr>";  
-  cad += "<tr><td>Test</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/test"">http://" + String(getIP(debugGlobal)) + "/test</a></td><td>N/A</td><td>HTML</td><td>Verifica el estado del Actuador</td></tr>";   
-  cad += "<tr><td>Reinicia el controlador.</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/restart"">http://" + String(getIP(debugGlobal)) + "/restart</a></td></tr>";
-  cad += "<tr><td>Informacion del Hw del sistema</td><td><a href=""http://" + String(getIP(debugGlobal)) + "/info"">http://" + String(getIP(debugGlobal)) + "/info</a></td></tr>";
-  cad += "</table>";
-  cad +="<BR><BR>";
-/***********************************/
-  
+  cad +="<BR>";  
+
+  //Salidas
+  cad += "\n<TABLE style=\"border: 2px solid blue\">\n";
+  cad += "<CAPTION>Salidas</CAPTION>\n";  
+  for(int8_t i=0;i<MAX_RELES;i++)
+    {
+    cad += "<TR>\n";
+    //Enlace para activar o desactivar
+    String orden="";
+    String color="";
+    if (estadoRele(i)==1) 
+      {
+      orden="desactiva"; 
+      color=VERDE;
+      }
+    else 
+      {
+      orden="activa";
+      color=ROJO;
+      }
+    cad += "<TD STYLE=\"color: #DDDDDD; text-align: center; background-color: " + String((estadoRele(i)?ROJO:VERDE)) + "; width: 100px\">" + nombreRele(i) + "</TD>";//<TD>" + String(estadoRele(i)) + "</TD>";
+    cad += "<td>\n";
+    cad += "<form action=\"http://10.68.0.61/" + orden + "Rele\">\n";
+    cad += "<input  type=\"hidden\" id=\"id\" name=\"id\" value=\"" + String(i) + "\" >\n";
+    cad += "<input STYLE=\"color: #FFFFFF; text-align: center; background-color: " + color + "; width: 80px\" type=\"submit\" value=\"" + orden + "r\">\n";
+    cad += "</form>\n";
+    cad += "</td>\n";    
+    cad += "</TR>\n";        
+    }
+  cad += "</TABLE>\n";
+  cad += "<BR><BR>";  
+
+  //Bloquear actuador
+  cad += "\n<TABLE style=\"border: 2px solid blue\">\n";
+  cad += "<CAPTION>Estado de bloqueo</CAPTION>\n";  
+  cad += "<tr>";
+  cad += "<TD STYLE=\"color: #DDDDDD; text-align: center; background-color: " + (bloqueoMQTT()?ROJO:VERDE) + "; width: 100px\">" + (bloqueoMQTT()?String("Bloqueado"):String("Desbloqueado")) + "</TD>\n";  
+  cad += "<td>";
+  cad += "<form action=\"./\" meth=\"post\">\n";
+  String accionBloqueo;
+  String color="";
+  if(bloqueoMQTT()) 
+    {
+    accionBloqueo = "desbloquear";
+    color = VERDE;
+    }
+  else 
+    {
+    accionBloqueo = "bloquear";
+    color = ROJO;
+    }
+  cad += "<input type=\"hidden\" id=\"accion\" name=\"accion\" value=\"" + accionBloqueo +"\">";
+  cad += "<input STYLE=\"color: #FFFFFF; text-align: center; background-color: " + color + "; width: 100px\" type=\"submit\" value=\"" + accionBloqueo +"\">";
+  cad += "</form>";
+  cad += "</td>";
+  cad += "</tr>";  
+  cad += "</table>";  
+  cad += "<BR><BR>";  
+ 
   cad += enlaces;
   cad += "<BR>";
   cad += "vueltas= " + String(vuelta) + " / " + String(UINT16_MAX);
+  cad += "<BR><BR>";
+  cad += IDENTIFICACION;
+
   cad += pieHTML;
   
   server.send(200, "text/html", cad);
   }
 
+
+/*********************************************/
+/*                                           */
+/*    activa el bloqueo de mensajes MQTT     */
+/*    para la activacion desacticion de      */
+/*    los reles                              */
+/*                                           */
+/*********************************************/
+void xxxhandleBloquear() 
+  {
+  if(server.hasArg("accion"))
+    {    
+    if (server.arg("accion")=="desbloquear") 
+      {
+      Serial.printf("la accion es desbloquear\n");  
+      desactivaBloqueoMQTT();
+      }
+    else if (server.arg("accion")=="bloquear") 
+      {
+      Serial.printf("la accion es bloquear\n");  
+      activaBloqueoMQTT();
+      }
+    }
+    
+  handleRoot();
+  }
+    
+/*********************************************/
+/*                                           */
+/*    desactiva el bloqueo de mensajes MQTT  */
+/*    para la activacion desacticion de      */
+/*    los reles                              */
+/*                                           */
+/*********************************************/
+void xxxhandledesbloquear() 
+  {
+  desactivaBloqueoMQTT();
+  handleRoot();
+  }
+    
 /*********************************************/
 /*                                           */
 /*    Web de consulta del estado de          */
@@ -150,6 +246,9 @@ void handleActivaRele(void)
 
     //activaRele(id);
     conmutaRele(id, nivelActivo, debugGlobal);
+
+    handleRoot();
+    return;
     
     cad += id;
     cad += SEPARADOR;
@@ -157,7 +256,7 @@ void handleActivaRele(void)
       
     server.send(200, "text/plain", cad); 
     }
-    else server.send(404, "text/plain", cad);  
+  else server.send(404, "text/plain", cad);  
   }
 
 
@@ -177,7 +276,10 @@ void handleDesactivaRele(void)
 
     //desactivaRele(id);
     conmutaRele(id, !nivelActivo, debugGlobal);
-  
+
+    handleRoot();
+    return;
+      
     cad += id;
     cad += SEPARADOR;
     cad += estadoRele(id);  
