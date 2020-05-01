@@ -10,8 +10,11 @@ Informacion del Hw del sistema http://IPControlador/info
 
 //enum HTTPMethod { HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_OPTIONS };
 #define IDENTIFICACION "Version " + String(VERSION) + "." + "<BR>"
-#define ROJO  String("#CC0000")
-#define VERDE String("#00CC00")
+#define FONDO     String("#DDDDDD")
+#define TEXTO     String("#000000")
+#define ENCENDIDO String("#FFFF00")
+#define APAGADO   String("#DDDDDD")
+
 
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
@@ -30,8 +33,6 @@ void inicializaWebServer(void)
   server.on("/estado", HTTP_ANY, handleEstadoReles); //Servicio de estdo de reles
   server.on("/activaRele", HTTP_ANY, handleActivaRele); //Servicio de activacion de rele
   server.on("/desactivaRele", HTTP_ANY, handleDesactivaRele);  //Servicio de desactivacion de rele
-//  server.on("/bloquear", HTTP_ANY, handleBloquear);  //Servicio de bloqueo de las salidas. Ignora lo que llega por MQTT
-//  server.on("/desbloquear", HTTP_ANY, handledesbloquear);  //Servicio de desbloqueo de las salidas. vuelve a procesar lo que llega por MQTT
   
   server.on("/test", HTTP_ANY, handleTest);  //URI de test
   server.on("/reset", HTTP_ANY, handleReset);  //URI de test  
@@ -72,7 +73,7 @@ void handleRoot()
   cad +="<BR>";  
 
   //Salidas
-  cad += "\n<TABLE style=\"border: 2px solid blue\">\n";
+  cad += "\n<TABLE style=\"border: 2px solid grey\">\n";
   cad += "<CAPTION>Salidas</CAPTION>\n";  
   for(int8_t i=0;i<MAX_RELES;i++)
     {
@@ -83,18 +84,19 @@ void handleRoot()
     if (estadoRele(i)==1) 
       {
       orden="desactiva"; 
-      color=VERDE;
+      color=APAGADO;
       }
     else 
       {
       orden="activa";
-      color=ROJO;
+      color=ENCENDIDO;
       }
-    cad += "<TD STYLE=\"color: #DDDDDD; text-align: center; background-color: " + String((estadoRele(i)?ROJO:VERDE)) + "; width: 100px\">" + nombreRele(i) + "</TD>";//<TD>" + String(estadoRele(i)) + "</TD>";
+    cad += "<TD STYLE=\"color: " + TEXTO + "; text-align: center; background-color: " + FONDO + "\">" + nombreRele(i) + "</TD>";
+    cad += "<TD STYLE=\"color: " + TEXTO + "; text-align: center; background-color: " + String((estadoRele(i)?ENCENDIDO:APAGADO)) + "; width: 100px\">" + nombreEstadoRele(i) + "</TD>";
     cad += "<td>\n";
-    cad += "<form action=\"http://10.68.0.61/" + orden + "Rele\">\n";
+    cad += "<form action=\"" + orden + "Rele\">\n";
     cad += "<input  type=\"hidden\" id=\"id\" name=\"id\" value=\"" + String(i) + "\" >\n";
-    cad += "<input STYLE=\"color: #FFFFFF; text-align: center; background-color: " + color + "; width: 80px\" type=\"submit\" value=\"" + orden + "r\">\n";
+    cad += "<input STYLE=\"color: " + TEXTO + "; text-align: center; background-color: " + color + "; width: 80px\" type=\"submit\" value=\"" + orden + "r\">\n";
     cad += "</form>\n";
     cad += "</td>\n";    
     cad += "</TR>\n";        
@@ -103,10 +105,10 @@ void handleRoot()
   cad += "<BR><BR>";  
 
   //Bloquear actuador
-  cad += "\n<TABLE style=\"border: 2px solid blue\">\n";
+  cad += "\n<TABLE style=\"border: 2px solid grey\">\n";
   cad += "<CAPTION>Estado de bloqueo</CAPTION>\n";  
   cad += "<tr>";
-  cad += "<TD STYLE=\"color: #DDDDDD; text-align: center; background-color: " + (bloqueoMQTT()?ROJO:VERDE) + "; width: 100px\">" + (bloqueoMQTT()?String("Bloqueado"):String("Desbloqueado")) + "</TD>\n";  
+  cad += "<TD STYLE=\"color: " + TEXTO + "; text-align: center; background-color: " + (bloqueoMQTT()?ENCENDIDO:APAGADO) + "; width: 100px\">" + (bloqueoMQTT()?String("Bloqueado"):String("Desbloqueado")) + "</TD>\n";  
   cad += "<td>";
   cad += "<form action=\"./\" meth=\"post\">\n";
   String accionBloqueo;
@@ -114,15 +116,15 @@ void handleRoot()
   if(bloqueoMQTT()) 
     {
     accionBloqueo = "desbloquear";
-    color = VERDE;
+    color = APAGADO;;
     }
   else 
     {
     accionBloqueo = "bloquear";
-    color = ROJO;
+    color = ENCENDIDO;
     }
   cad += "<input type=\"hidden\" id=\"accion\" name=\"accion\" value=\"" + accionBloqueo +"\">";
-  cad += "<input STYLE=\"color: #FFFFFF; text-align: center; background-color: " + color + "; width: 100px\" type=\"submit\" value=\"" + accionBloqueo +"\">";
+  cad += "<input STYLE=\"color: " + TEXTO + "; text-align: center; background-color: " + color + "; width: 100px\" type=\"submit\" value=\"" + accionBloqueo +"\">";
   cad += "</form>";
   cad += "</td>";
   cad += "</tr>";  
@@ -512,7 +514,12 @@ void handleCreaFichero(void)
     nombreFichero=server.arg("nombre");
     contenidoFichero=server.arg("contenido");
 
-    if(salvaFichero( nombreFichero, nombreFichero+".bak", contenidoFichero)) cad += "Fichero salvado con exito<br>";
+    if(salvaFichero( nombreFichero, nombreFichero+".bak", contenidoFichero)) 
+    {
+    //cad += "Fichero salvado con exito<br>";
+    handleListaFicheros();
+    return;
+    }    
     else cad += "No se pudo salvar el fichero<br>"; 
     }
   else cad += "Falta el argumento <nombre de fichero>"; 
@@ -540,8 +547,13 @@ void handleBorraFichero(void)
     {
     nombreFichero=server.arg("nombre");
 
-    if(borraFichero(nombreFichero)) cad += "El fichero " + nombreFichero + " ha sido borrado.\n";
-    else cad += "No sepudo borrar el fichero " + nombreFichero + ".\n"; 
+    if(borraFichero(nombreFichero)) 
+      {
+      //cad += "El fichero " + nombreFichero + " ha sido borrado.\n";
+      handleListaFicheros();
+      return;
+      }
+    else cad += "No sepudo borrar el fichero " + nombreFichero + ".\n";    
     }
   else cad += "Falta el argumento <nombre de fichero>"; 
 

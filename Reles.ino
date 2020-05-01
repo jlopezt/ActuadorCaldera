@@ -238,6 +238,30 @@ String nombreRele(int8_t id)
   return reles[id].nombre;
   } 
 
+/********************************************************/
+/*                                                      */
+/*  Devuelve el mensaje asociado al estado del          */
+/*  rele con el id especificado                         */
+/*                                                      */
+/********************************************************/
+String mensajeRele(int8_t id)
+  { 
+  if(id <0 || id>=MAX_RELES) return "ERROR"; //Rele fuera de rango    
+  return reles[id].mensajes[reles[id].estado];
+  } 
+
+/********************************************************/
+/*                                                      */
+/*  Devuelve el nombre del estado actual del            */
+/*  rele con el id especificado                         */
+/*                                                      */
+/********************************************************/
+String nombreEstadoRele(int8_t id)
+  { 
+  if(id <0 || id>=MAX_RELES) return "ERROR"; //Rele fuera de rango    
+  return reles[id].nombreEstados[reles[id].estado];
+  } 
+
 /*************************************************/
 /*conmuta el rele indicado en id                 */
 /*devuelve 1 si ok, -1 si ko                     */
