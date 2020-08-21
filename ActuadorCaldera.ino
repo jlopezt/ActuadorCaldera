@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.5.5 (ESP8266v2.6.3 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)" //ESP8266v2.5.1
+#define VERSION "1.6.0 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)"
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -20,7 +20,6 @@
 #define MAX_RELES        2 //numero maximo de reles soportado
 
 //Nombres de ficheros
-#define FICHERO_CANDADO        "/Candado"
 #define GLOBAL_CONFIG_FILE     "/Config.json"
 #define GLOBAL_CONFIG_BAK_FILE "/Config.json.bak"
 #define RELES_CONFIG_FILE      "/RelesConfig.json"
@@ -59,7 +58,6 @@ uint16_t vuelta = MAX_VUELTAS-100;//0; //vueltas de loop
 int debugGlobal=0; //por defecto desabilitado
 uint8_t ahorroEnergia=0;//inicialmente desactivado el ahorro de energia
 time_t anchoLoop= ANCHO_INTERVALO;//inicialmente desactivado el ahorro de energia
-boolean candado=false; //Candado de configuracion. true implica que la ultima configuracion fue mal
 
 //Contadores
 uint16_t multiplicadorAnchoIntervalo=5;
@@ -71,6 +69,20 @@ uint16_t frecuenciaOrdenes=2;
 uint16_t frecuenciaMQTT=50;
 uint16_t frecuenciaEnvioDatos=100;
 uint16_t frecuenciaWifiWatchdog=100;
+
+/************************* FUNCIONES PARA EL BUITIN LED ***************************/
+void configuraLed(void){pinMode(LED_BUILTIN, OUTPUT);}
+void enciendeLed(void){digitalWrite(LED_BUILTIN, LOW);}//En esp8266 es al reves que en esp32
+void apagaLed(void){digitalWrite(LED_BUILTIN, HIGH);}//En esp8266 es al reves que en esp32
+void parpadeaLed(uint8_t veces, uint16_t espera=100)
+  {
+  for(uint8_t i=0;i<2*veces;i++)
+    {
+    delay(espera/2);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
+  }
+/***********************************************************************************/  
 
 void setup()
   {
@@ -89,21 +101,6 @@ void setup()
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
-
-  //Compruebo si existe candado, si existe la ultima configuracion fue mal
-  if(existeFichero(FICHERO_CANDADO)) 
-    {
-    Serial.printf("Candado puesto. Configuracion por defecto");
-    candado=true; 
-    debugGlobal=1;
-    }
-  else
-    {
-    candado=false;
-    //Genera candado
-    if(salvaFichero(FICHERO_CANDADO,"","JSD")) Serial.println("Candado creado");
-    else Serial.println("ERROR - No se pudo crear el candado");
-    }
     
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
@@ -133,10 +130,6 @@ void setup()
   //Ordenes serie
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
-
-  //Si ha llegado hasta aqui, todo ha ido bien y borro el candado
-  if(borraFichero(FICHERO_CANDADO))Serial.println("Candado borrado");
-  else Serial.println("ERROR - No se pudo borrar el candado");
   
   Serial.println("***************************************************************");
   Serial.println("*                                                             *");
@@ -190,6 +183,7 @@ boolean inicializaConfiguracion(boolean debug)
   //Contadores
   multiplicadorAnchoIntervalo=5;
   anchoIntervalo=1200;
+  anchoLoop=anchoIntervalo;  
   frecuenciaOTA=5;
   frecuenciaServidorWeb=1;
   frecuenciaOrdenes=2;
@@ -203,17 +197,17 @@ boolean inicializaConfiguracion(boolean debug)
   
   if(leeFichero(GLOBAL_CONFIG_FILE, cad)) 
     {
-    if (parseaConfiguracionGlobal(cad)) 
-      {
-      //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
-      if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
-      else anchoLoop=multiplicadorAnchoIntervalo*anchoIntervalo;
-
-      return true;
-      }
-    }  
+    Serial.printf("No existe fichero de configuracion global\n");    
+    return false;
+    }
     
-  return false;
+  parseaConfiguracionGlobal(cad);
+
+  //Ajusto el ancho del intervalo segun el modo de ahorro de energia  
+  if(ahorroEnergia==0) anchoLoop=anchoIntervalo;
+  else anchoLoop=multiplicadorAnchoIntervalo*anchoIntervalo;
+
+  return true;
   }
 
 /*********************************************/

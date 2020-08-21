@@ -102,13 +102,11 @@ boolean recuperaDatosReles(int debug)
 
   if (debug) Serial.println("Recupero configuracion de archivo...");
   
-  if(!leeFicheroConfig(RELES_CONFIG_FILE, cad)) 
+  if(!leeFichero(RELES_CONFIG_FILE, cad)) 
     {
     //Confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion de Reles\n");    
-    cad="{\"Reles\": []}";
-    //salvo la config por defecto
-    //if(salvaFicheroConfig(RELES_CONFIG_FILE, SALIDAS_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion de Salidas creado por defecto\n");
+    return false;
     }      
     
   return parseaConfiguracionReles(cad);

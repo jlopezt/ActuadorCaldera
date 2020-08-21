@@ -82,12 +82,10 @@ boolean recuperaDatosMQTT(boolean debug)
   topicOrdenes="";
   publicarEstado=1;//por defecto publico
 
-  if(!leeFicheroConfig(MQTT_CONFIG_FILE, cad))
+  if(!leeFichero(MQTT_CONFIG_FILE, cad))
     {
-    //Algo salio mal, confgiguracion por defecto
     Serial.printf("No existe fichero de configuracion MQTT o esta corrupto\n");
-    cad="{\"IPBroker\": \"0.0.0.0\", \"puerto\": 1883, \"timeReconnectMQTT\": 500, \"ID_MQTT\": \"actuador\", \"usuarioMQTT\": \"usuario\", \"passwordMQTT\": \"password\", \"topicRoot\": \"casa\", \"topicOrdenes\": \"actuador\", \"publicarEstado\": 1}";
-    //if (salvaFicheroConfig(MQTT_CONFIG_FILE, MQTT_CONFIG_BAK_FILE, cad)) Serial.printf("Fichero de configuracion MQTT creado por defecto\n");    
+    return false;
     }
 
   return parseaConfiguracionMQTT(cad);
