@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.6.0 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)"
+#define VERSION "1.6.2 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)"
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -87,6 +87,9 @@ void parpadeaLed(uint8_t veces, uint16_t espera=100)
 void setup()
   {
   Serial.begin(115200);
+  configuraLed();
+  enciendeLed();
+    
   Serial.printf("\n\n\n");
   Serial.printf("*************** %s ***************\n",NOMBRE_FAMILIA);
   Serial.printf("*************** %s ***************\n",VERSION);
@@ -101,27 +104,35 @@ void setup()
   Serial.printf("\n\nInit Ficheros ---------------------------------------------------------------------\n");
   //Ficheros - Lo primero para poder leer los demas ficheros de configuracion
   inicializaFicheros(debugGlobal);
+  apagaLed();
     
   //Configuracion general
   Serial.println("Init Config -----------------------------------------------------------------------");
-  if(!inicializaConfiguracion(debugGlobal)) Serial.printf("Error al recuperar configuracion general.\nIniciando con valores por defecto.\n");
+  inicializaConfiguracion(debugGlobal);
+  parpadeaLed(1);
 
   //Wifi
   Serial.println("Init WiFi -----------------------------------------------------------------------");
   if (inicializaWifi(true))//debugGlobal)) No tien esentido debugGlobal, no hay manera de activarlo
     {
+    parpadeaLed(5,200);
+
     /*----------------Inicializaciones que necesitan red-------------*/
     //OTA
     Serial.println("Init OTA -----------------------------------------------------------------------");
     inicializaOTA(debugGlobal);
+    parpadeaLed(1);
     //MQTT
     Serial.println("Init MQTT -----------------------------------------------------------------------");
     inicializaMQTT();
+    parpadeaLed(2);
     //WebServer
-    Serial.println("Init Web --------------------------------------------------------------------------");
+    Serial.println("Init Web ------------------------------------------------------------------------");
     inicializaWebServer();
+    parpadeaLed(3);
     }
   else Serial.println("No se pudo conectar al WiFi");
+  apagaLed();
 
   //Reles
   Serial.println("Init reles ------------------------------------------------------------------------");
@@ -130,6 +141,9 @@ void setup()
   //Ordenes serie
   Serial.println("Init Ordenes ----------------------------------------------------------------------");  
   inicializaOrden();//Inicializa los buffers de recepcion de ordenes desde PC
+  
+  parpadeaLed(2);
+  apagaLed();//Por si acaso....
   
   Serial.println("***************************************************************");
   Serial.println("*                                                             *");
@@ -146,7 +160,7 @@ void  loop()
   //------------- EJECUCION DE TAREAS --------------------------------------
   //Acciones a realizar en el bucle   
   //Prioridad 0: OTA es prioritario.
-  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle();//atiendeOTA(); //Gestion de actualizacion OTA
+  if ((vuelta % frecuenciaOTA)==0) ArduinoOTA.handle(); //Gestion de actualizacion OTA
   //Prioridad 2: Funciones de control.
   if ((vuelta % frecuenciaLogica)==0) actuaReles(debugGlobal);
   //Prioridad 3: Interfaces externos de consulta    
@@ -161,7 +175,7 @@ void  loop()
   vuelta++;//sumo una vuelta de loop  
       
   //Espero hasta el final de la rodaja de tiempo
-  while(millis()<EntradaBucle+anchoLoop)//while(millis()<EntradaBucle+ANCHO_INTERVALO)
+  while(millis()<EntradaBucle+anchoLoop)
     {
     if(millis()<EntradaBucle) break; //cada 49 dias el contador de millis desborda
     //delayMicroseconds(1000);
@@ -195,7 +209,7 @@ boolean inicializaConfiguracion(boolean debug)
   ahorroEnergia=0; //ahorro de energia desactivado por defecto
   nivelActivo=LOW;  
   
-  if(leeFichero(GLOBAL_CONFIG_FILE, cad)) 
+  if(!leeFichero(GLOBAL_CONFIG_FILE, cad)) 
     {
     Serial.printf("No existe fichero de configuracion global\n");    
     return false;

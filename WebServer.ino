@@ -17,7 +17,8 @@ Informacion del Hw del sistema http://IPControlador/info
 
 
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
+//#include <ESP8266mDNS.h>
+#include <FS.h>
 
 ESP8266WebServer server(PUERTO_WEBSERVER);
 
@@ -29,8 +30,8 @@ void inicializaWebServer(void)
   {
   //decalra las URIs a las que va a responder
   server.on("/", HTTP_ANY, handleRoot); //Responde con la iodentificacion del modulo
-  server.on("/web", HTTP_ANY, handleWeb); //Servicio de estdo de reles en HTML
-  server.on("/estado", HTTP_ANY, handleEstadoReles); //Servicio de estdo de reles
+//  server.on("/web", HTTP_ANY, handleWeb); //Servicio de estdo de reles en HTML
+//  server.on("/estado", HTTP_ANY, handleEstadoReles); //Servicio de estdo de reles
   server.on("/activaRele", HTTP_ANY, handleActivaRele); //Servicio de activacion de rele
   server.on("/desactivaRele", HTTP_ANY, handleDesactivaRele);  //Servicio de desactivacion de rele
   
@@ -45,6 +46,10 @@ void inicializaWebServer(void)
   server.on("/leeFichero", HTTP_ANY, handleLeeFichero);  //URI de leer fichero
   server.on("/manageFichero", HTTP_ANY, handleManageFichero);  //URI de leer fichero  
   server.on("/infoFS", HTTP_ANY, handleInfoFS);  //URI de info del FS
+
+  server.on("/edit.html",  HTTP_POST, []() {  // If a POST request is sent to the /edit.html address,
+    server.send(200, "text/plain", ""); 
+  }, handleFileUpload);                       // go to 'handleFileUpload'
 
   server.onNotFound(handleNotFound);//pagina no encontrada
 
@@ -141,7 +146,6 @@ void handleRoot()
   
   server.send(200, "text/html", cad);
   }
-
 
 /*********************************************/
 /*                                           */
@@ -363,6 +367,21 @@ void handleInfo(void)
 
   cad += cabeceraHTML;
   cad += IDENTIFICACION;
+
+  cad += "<BR>----------------- uptime --------------------<BR>";
+  unsigned long milis=millis();
+
+  cad += "uptime (ms): " + String(milis);
+  cad += "<BR>";
+
+  int8_t segundos=(milis/1000)%60;
+  int8_t minutos=(milis/60000)%60;
+  int8_t horas=milis/3600000;
+
+  char horaText[9]="";
+  sprintf(horaText,"%02i:%02i:%02i",horas,minutos,segundos);
+  cad += String(horaText);
+  cad += "<BR>---------------------------------------------<BR>";
 
   cad += "<BR>-----------------info logica-----------------<BR>";
   cad += "IP: " + String(getIP(debugGlobal));
@@ -608,7 +627,7 @@ void handleInfoFS(void)
   {
   String cad=cabeceraHTML;
 
-  cad += IDENTIFICACION;//"<h1>" + String(NOMBRE_FAMILIA) + "<br></h1>";
+  cad += IDENTIFICACION;
   
   //inicializo el sistema de ficheros
   if (SPIFFS.begin()) 
@@ -656,6 +675,8 @@ void handleInfoFS(void)
 /*********************************************/
 void handleNotFound()
   {
+  if(handleFileRead(server.uri()))return;
+    
   String message = "";//"<h1>" + String(NOMBRE_FAMILIA) + "<br></h1>";
 
   message = "<h1>" + String(NOMBRE_FAMILIA) + "<br></h1>";
@@ -675,6 +696,7 @@ void handleNotFound()
     
   server.send(404, "text/html", message);
   }
+
 /*********************************************/
 /*                                           */
 /*  Habilita la edicion y borrado de los     */
@@ -804,3 +826,78 @@ void handleListaFicheros(void)
   server.send(200, "text/html", cad); 
   }
   
+/**********************************************************************/
+String getContentType(String filename) { // determine the filetype of a given filename, based on the extension
+  if (filename.endsWith(".html")) return "text/html";
+  else if (filename.endsWith(".css")) return "text/css";
+  else if (filename.endsWith(".js")) return "application/javascript";
+  else if (filename.endsWith(".ico")) return "image/x-icon";
+  else if (filename.endsWith(".gz")) return "application/x-gzip";
+  return "text/plain";
+}
+
+bool handleFileRead(String path) 
+  { // send the right file to the client (if it exists)
+  Serial.println("handleFileRead: " + path);
+  
+  if (!path.startsWith("/")) path += "/";
+  path = "/www" + path; //busco los ficheros en el SPIFFS en la carpeta www
+  //if (!path.endsWith("/")) path += "/";
+  
+  String contentType = getContentType(path);             // Get the MIME type
+  String pathWithGz = path + ".gz";
+  if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) 
+    { // If the file exists, either as a compressed archive, or normal
+    if (SPIFFS.exists(pathWithGz))                         // If there's a compressed version available
+      path += ".gz";                                         // Use the compressed verion
+    File file = SPIFFS.open(path, "r");                    // Open the file
+    size_t sent = server.streamFile(file, contentType);    // Send it to the client
+    file.close();                                          // Close the file again
+    Serial.println(String("\tSent file: ") + path);
+    return true;
+    }
+  Serial.println(String("\tFile Not Found: ") + path);   // If the file doesn't exist, return false
+  return false;
+  }
+
+void handleFileUpload()
+  {
+  File fsUploadFile;
+  HTTPUpload& upload = server.upload();
+  String path;
+ 
+  if(upload.status == UPLOAD_FILE_START)
+    {
+    path = upload.filename;
+    if(!path.startsWith("/")) path = "/"+path;
+    if(!path.startsWith("/www")) path = "/www"+path;
+    if(!path.endsWith(".gz")) 
+      {                          // The file server always prefers a compressed version of a file 
+      String pathWithGz = path+".gz";                    // So if an uploaded file is not compressed, the existing compressed
+      if(SPIFFS.exists(pathWithGz))                      // version of that file must be deleted (if it exists)
+         SPIFFS.remove(pathWithGz);
+      }
+      
+    Serial.print("handleFileUpload Name: "); Serial.println(path);
+    fsUploadFile = SPIFFS.open(path, "w");            // Open the file for writing in SPIFFS (create if it doesn't exist)
+    path = String();
+    }
+  else if(upload.status == UPLOAD_FILE_WRITE)
+    {
+    if(fsUploadFile) fsUploadFile.write(upload.buf, upload.currentSize); // Write the received bytes to the file
+    } 
+  else if(upload.status == UPLOAD_FILE_END)
+    {
+    if(fsUploadFile) 
+      {                                    // If the file was successfully created
+      fsUploadFile.close();                               // Close the file again
+      Serial.print("handleFileUpload Size: "); Serial.println(upload.totalSize);
+      server.sendHeader("Location","/success.html");      // Redirect the client to the success page
+      server.send(303);
+      }
+    else 
+      {
+      server.send(500, "text/plain", "500: couldn't create file");
+      }
+    }
+  }

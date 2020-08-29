@@ -1,4 +1,5 @@
 {
+	"mDNS":"actuadorCaldera",
   "wifiIP": "10.68.0.61",
   "wifiGW":"10.68.1.1",
   "wifiNet": "255.255.0.0",

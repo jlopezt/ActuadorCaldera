@@ -20,7 +20,7 @@
 #define FALSE 0
 #define MAX_LONG_NOMBRE_DISPOSITIVO 32
 #define WIFI_PORTAL_TIMEOUT 5*60 //5 minutos en segundos
-#define TIME_OUT 30000
+#define TIME_OUT 10000
 #define DELAY_MULTIBASE 1000
 
 IPAddress wifiIP(0, 0, 0, 0);//0.0.0.0 significa que no hay IP fija
@@ -33,7 +33,7 @@ String mDNS="";
 const char* ssid;
 const char* password;
 
-ESP8266WiFiMulti WiFiMulti;
+ESP8266WiFiMulti MiWiFiMulti;
 
 boolean conectado=false; //Si el portal de configuracion devolvio OK a la conexion
 
@@ -41,7 +41,7 @@ boolean inicializamDNS(const char *nombre)
   {  
   String mDNSnombre;
   
-  if(nombre==NULL) mDNSnombre=mDNS;
+  if(nombre==NULL) mDNSnombre=NOMBRE_mDNS_CONFIG;//mDNS;
   else mDNSnombre=nombre;
   
   if (MDNS.begin(mDNSnombre.c_str()))
@@ -93,14 +93,6 @@ boolean recuperaDatosWiFi(boolean debug)
   String cad="";
   if (debug) Serial.println("Recupero configuracion de archivo...");
 
-  //cargo el valores por defecto
-  wifiIP=IPAddress(0,0,0,0);
-  wifiGW=IPAddress(0,0,0,0);
-  wifiNet=IPAddress(0,0,0,0);
-  wifiDNS1=IPAddress(0,0,0,0);
-  wifiDNS2=IPAddress(0,0,0,0);
-  mDNS=NOMBRE_mDNS_CONFIG;
-   
   if(!leeFichero(WIFI_CONFIG_FILE, cad)) 
     {
     Serial.printf("No existe fichero de configuracion WiFi o no es valido\n");//Confgiguracion por defecto
@@ -117,6 +109,9 @@ boolean recuperaDatosWiFi(boolean debug)
 boolean parseaConfiguracionWifi(String contenido)
   {  
   DynamicJsonBuffer jsonBuffer;
+
+  Serial.printf("JSON a parsear:\n %s\n",contenido.c_str());
+  
   JsonObject& json = jsonBuffer.parseObject(contenido.c_str());
   if (json.success()) 
     {
@@ -140,7 +135,7 @@ boolean parseaConfiguracionWifi(String contenido)
       {
       const char* wifi_ssid = wifi[i]["ssid"];
       const char* wifi_password = wifi[i]["password"];
-      WiFiMulti.addAP(wifi_ssid , wifi_password);
+      MiWiFiMulti.addAP(wifi_ssid , wifi_password);
       Serial.printf("Red *%s* añadida.\n",wifi_ssid);
       }//del for
 //************************************************************************************************
@@ -151,6 +146,14 @@ boolean parseaConfiguracionWifi(String contenido)
 
 boolean inicializaWifi(boolean debug)
   {
+  //cargo el valores por defecto
+  wifiIP=IPAddress(0,0,0,0);
+  wifiGW=IPAddress(0,0,0,0);
+  wifiNet=IPAddress(0,0,0,0);
+  wifiDNS1=IPAddress(0,0,0,0);
+  wifiDNS2=IPAddress(0,0,0,0);
+  mDNS=NOMBRE_mDNS_CONFIG;
+   
   //Desconecto si esta conectado
   WiFi.disconnect(true);//(false);   
   //No reconecta a la ultima WiFi que se conecto
@@ -175,7 +178,7 @@ boolean inicializaWifi(boolean debug)
       else Serial.println("No hay IP fija");
 
       //Inicializo mDNS para localizar el dispositivo
-      inicializamDNS(nombre_dispositivo.c_str());
+      inicializamDNS(mDNS.c_str());//nombre_dispositivo.c_str());
   
       Serial.println("------------------------WiFi conectada (configuracion almacenada)--------------------------------------");
       Serial.println("WiFi conectada");
@@ -242,7 +245,7 @@ boolean conectaAutodetect(boolean debug)
   //if (wifiIP!=IPAddress(0,0,0,0)) wifiManager.setSTAStaticIPConfig(wifiIP,wifiGW,wifiNet);//Preparo la IP fija (IPAddress ip, IPAddress gw, IPAddress sn) 
 
   //Inicializo mDNS para localizar la base
-  inicializamDNS(NOMBRE_mDNS_CONFIG);
+  inicializamDNS(NULL);//NOMBRE_mDNS_CONFIG);
   
   if (!wifiManager.startConfigPortal(NOMBRE_AP)) Serial.println("Error al conectar. Salida por time-out\n");      
   else 
@@ -263,26 +266,11 @@ boolean conectaAutodetect(boolean debug)
   return true;
   }
 
-boolean conectaMonobase(boolean debug)
-  { 
-  WiFi.begin(ssid, password);
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) 
-    {
-    delay(100);
-    if (debug) Serial.print("(MonoBase)Conectando WiFi....");
-    }
- 
-  return TRUE;
-  }
-
 boolean conectaMultibase(boolean debug)
   {
   // wait for WiFi connection
   int time_out=0;
-
-  while(WiFiMulti.run()!=WL_CONNECTED)
+  while(MiWiFiMulti.run()!=WL_CONNECTED)
     {
     Serial.println("(Multi) Conectando Wifi...");  
     //incluido en la funcion parpadeo como delay(DELAY/2);  

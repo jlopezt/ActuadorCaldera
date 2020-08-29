@@ -9,6 +9,7 @@
 /*                                            */
 /* https://pubsubclient.knolleary.net/api.html*/
 /**********************************************/
+
 //definicion de los comodines del MQTT
 #define WILDCARD_ALL      "#"
 #define WILDCARD_ONELEVEL "+"
@@ -301,6 +302,8 @@ boolean conectaMQTT(void)
     if(debugGlobal) Serial.println("No conectado, intentando conectar.");
   
     // Attempt to connect
+    Serial.printf("Parametros MQTT:\nID_MQTT: %s\nusuarioMQTT: %s\npasswordMQTT: %s\nWILL_TOPIC: %s\nWILL_QOS: %i\nWILL_RETAIN: %i\nWILL_MSG: %s\nCLEAN_SESSION: %i\n",ID_MQTT.c_str(),usuarioMQTT.c_str(),passwordMQTT.c_str(),(topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN,String(WILL_MSG).c_str(),CLEAN_SESSION);
+   
     //boolean connect(const char* id, const char* user, const char* pass, const char* willTopic, uint8_t willQos, boolean willRetain, const char* willMessage, boolean cleanSession);    
     Serial.printf("Conectando con:\nid=%s\nuser=%s\npassword=%s\nwill topic=%s\nwillQoS=%i\nwillRetain=%i\nwillMessage=%s\ncleanSession=%i\n",ID_MQTT.c_str(), usuarioMQTT.c_str(), passwordMQTT.c_str(), (topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN, String(WILL_MSG).c_str(), CLEAN_SESSION);    
     if (clienteMQTT.connect(ID_MQTT.c_str(), usuarioMQTT.c_str(), passwordMQTT.c_str(), (topicRoot+"/"+String(WILL_TOPIC)).c_str(), WILL_QOS, WILL_RETAIN, String(WILL_MSG).c_str(), CLEAN_SESSION))
