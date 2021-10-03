@@ -7,12 +7,12 @@
     "nombre": "Calefaccion", 
     "inicio": "off",
     "Estados": [
-      {"valor": 0, "texto": "Calefaccion apagada."},
-      {"valor": 1, "texto": "Calefaccion encendida."}
+      {"valor": 0, "texto": "Calefaccion apagada"},
+      {"valor": 1, "texto": "Calefaccion encendida"}
       ],
     "Mensajes": [
-      {"valor": 0, "texto": "Apago la calefaccion."},
-      {"valor": 1, "texto": "Enciendo la calefaccion."}
+      {"valor": 0, "texto": "La calefaccion esta apagada"},
+      {"valor": 1, "texto": "La calefaccion esta encendida"}
       ],
     "topicMensajes": "mensajes"
     },
@@ -22,12 +22,12 @@
     "nombre": "Otros", 
     "inicio": "on",
     "Estados": [
-      {"valor": 0, "texto": "Modulo de calefaccion conectado."},
-      {"valor": 1, "texto": "Modulo de calefaccion desconectado."}
+      {"valor": 0, "texto": "Modulo de calefaccion desconectado."},
+      {"valor": 1, "texto": "Modulo de calefaccion conectado."}
       ],
     "Mensajes": [
-      {"valor": 0, "texto": "Se ha desconectado el control de la calefaccion."},
-      {"valor": 1, "texto": "Se ha conectado el control de la calefaccion."}
+      {"valor": 0, "texto": "Se ha desconectado el control de la calefaccion"},
+      {"valor": 1, "texto": "Se ha conectado el control de la calefaccion"}
       ],
     "topicMensajes": "mensajesXXX"
     }

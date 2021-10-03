@@ -37,6 +37,8 @@ boolean inicializaOTA(boolean debug)
   
   //iniciamos la gestion OTA
   ArduinoOTA.begin();
+
+  return true;
   }
 
 void inicioOTA(void)
@@ -66,4 +68,6 @@ void errorOTA(ota_error_t error)
   else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
   else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
   else if (error == OTA_END_ERROR) Serial.println("End Failed");
+
+  Serial.printf("\n");
   }

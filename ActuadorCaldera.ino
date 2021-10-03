@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "1.6.2 (ESP8266v2.7.4 OTA|json|MQTT|Cont. dinamicos|Ping MQTT|Seguridad TiemOut)"
+#define VERSION "v1.7.0"
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1
@@ -237,22 +237,24 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Serial.println("parsed json");
 //******************************Parte especifica del json a leer********************************
-    multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo");
-    anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
-    frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
-    frecuenciaLogica=json.get<uint16_t>("frecuenciaLogica");
-    frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
-    frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
-    frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
-    frecuenciaEnvioDatos=json.get<uint16_t>("frecuenciaEnvioDatos");
-    frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");  
-    
-    ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
+    if (json.containsKey("multiplicadorAnchoIntervalo")) multiplicadorAnchoIntervalo=json.get<uint16_t>("multiplicadorAnchoIntervalo"); 
+    if (json.containsKey("anchoIntervalo")) anchoIntervalo=json.get<uint16_t>("anchoIntervalo");
+    if (json.containsKey("frecuenciaOTA")) frecuenciaOTA=json.get<uint16_t>("frecuenciaOTA");
+
+    if (json.containsKey("frecuenciaLogica")) frecuenciaLogica=json.get<uint16_t>("frecuenciaLogica");
+    if (json.containsKey("frecuenciaServidorWeb")) frecuenciaServidorWeb=json.get<uint16_t>("frecuenciaServidorWeb");
+    if (json.containsKey("frecuenciaOrdenes")) frecuenciaOrdenes=json.get<uint16_t>("frecuenciaOrdenes");
+    if (json.containsKey("frecuenciaMQTT")) frecuenciaMQTT=json.get<uint16_t>("frecuenciaMQTT");
+    if (json.containsKey("frecuencioEnviaDatos")) frecuenciaEnvioDatos=json.get<uint16_t>("frecuenciaEnvioDatos");
+    if (json.containsKey("frecuenciaWifiWatchdog")) frecuenciaWifiWatchdog=json.get<uint16_t>("frecuenciaWifiWatchdog");
+
+    if (json.containsKey("ahorroEnergia")) ahorroEnergia=json.get<uint16_t>("ahorroEnergia");
+    if (json.containsKey("nombre")) nombre_dispositivo=json.get<String>("nombre");
 
     if((int)json["NivelActivo"]==0) nivelActivo=LOW;
     else nivelActivo=HIGH;
     
-    Serial.printf("Configuracion leida:\nNivelActivo: %i\n", nivelActivo);
+    Serial.printf("Configuracion leida:\nNombre: %s\nNivelActivo: %i\n", nombre_dispositivo.c_str(),nivelActivo);
     Serial.printf("\nContadores\nmultiplicadorAnchoIntervalo: %i\nanchoIntervalo: %i\nfrecuenciaOTA: %i\nfrecuenciaServidorWeb: %i\nfrecuenciaOrdenes: %i\nfrecuenciaMQTT: %i\nfrecuenciaEnvioDatos: %i\nfrecuenciaWifiWatchdog: %i\n",multiplicadorAnchoIntervalo, anchoIntervalo, frecuenciaOTA, frecuenciaServidorWeb, frecuenciaOrdenes, frecuenciaMQTT, frecuenciaEnvioDatos, frecuenciaWifiWatchdog);    
     return true;
 //************************************************************************************************

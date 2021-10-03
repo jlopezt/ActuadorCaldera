@@ -3,8 +3,8 @@
 	"puerto": 1883, 
 	"timeReconnectMQTT": 100,	
 	"ID_MQTT": "actuadorPre",
-	"usuarioMQTT": "usuario", 
-	"passwordMQTT": "password", 
+  "usuarioMQTT": "domoticae",
+  "passwordMQTT": "88716",
 	"topicRoot": "casaPre",
 	"topicOrdenes": "actuadorPre",		
 	"publicarEstado": 1

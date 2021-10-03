@@ -334,3 +334,33 @@ String generaJsonEstado(void)
 
   return cad;
   } 
+
+/**********************************************/
+/* Genera el json con el estado para la web   */
+/**********************************************/
+String generaJson(void)
+  {
+  String cad="";
+
+  //const size_t bufferSize = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(8);
+  const size_t bufferSize = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + JSON_OBJECT_SIZE(5);
+
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  
+  JsonObject& root = jsonBuffer.createObject();
+  
+  JsonArray& Salidas = root.createNestedArray("salidas");
+  for(int8_t id=0;id<MAX_RELES;id++){
+
+    JsonObject& Salidas_0 = Salidas.createNestedObject();
+    Salidas_0["nombre"] = nombreRele(id);
+    Salidas_0["estado"] = estadoRele(id);
+    Salidas_0["nombreEstado"] = nombreEstadoRele(id);
+    Salidas_0["mensaje"] = mensajeRele(id);
+  }
+
+  root["estadoBloqueo"] = bloqueoMQTT();
+  
+  root.printTo(cad);
+  return cad;  
+  } 
