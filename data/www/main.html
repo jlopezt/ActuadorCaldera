@@ -53,7 +53,7 @@
         
         //cargo los iframes con al info inicial
         cambiaIFrame("root",'iframe_a');
-        cambiaIFrame("listaFicheros",'iframe_b');
+        cambiaIFrame("ficheros",'iframe_b');
 
         //Ajusto la altura del iframe        
         var margen = window.getComputedStyle(document.body,null).getPropertyValue("margin-top");
@@ -102,7 +102,7 @@
       <div class="izquierda">
         <nav id="servicio" class="oculto">
           <ul>
-            <li onMouseOver="this.style.cursor='pointer'" onClick="cambiaIFrame('listaFicheros','iframe_b')">Ficheros</li>
+            <li onMouseOver="this.style.cursor='pointer'" onClick="cambiaIFrame('ficheros','iframe_b')">Ficheros</li>
             <li onMouseOver="this.style.cursor='pointer'" onClick="cambiaIFrame('upload','iframe_b')">upload</li>
             <li onMouseOver="this.style.cursor='pointer'" onClick="cambiaIFrame('info','iframe_b')">Info</li>
             <li onMouseOver="this.style.cursor='pointer'" onClick="cambiaIFrame('restart','iframe_b')">Reiniciar</li>

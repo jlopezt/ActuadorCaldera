@@ -147,6 +147,85 @@ boolean listaFicheros(String &contenido)
   }  
 
 /************************************************/
+/* Devuelve el nombre del direcotrio del        */
+/* fichro que se pasa como parametro            */
+/************************************************/
+String directorioFichero(String nombreFichero)
+  {
+  if (!nombreFichero.startsWith("/")) nombreFichero="/" + nombreFichero;
+  String cad=nombreFichero.substring(0,nombreFichero.lastIndexOf("/"));
+  return(cad);
+  }
+
+/************************************************/
+/* Devuelve si un nombre de fichero incluye     */
+/* un directorio por que encuentre mas de una / */
+/************************************************/
+boolean esDirectorio(String nombre)
+  {
+  if(nombre.startsWith("/")) nombre=nombre.substring(1);//si empieza por / se lo quito
+
+  if(nombre.indexOf("/")!=-1) return true;
+  return false;
+  }
+
+/************************************************/
+/* Recupera los ficheros almacenados en el      */
+/* dispositivo. Devuelve una cadena separada    */
+/* por SEPARADOR                                */
+/************************************************/
+String listadoFicheros(String prefix)
+  {   
+  String salida="";
+
+  if(!prefix.startsWith("/")) prefix="/" + prefix;
+
+  const size_t capacity = 2*JSON_ARRAY_SIZE(15) + JSON_OBJECT_SIZE(31);
+  DynamicJsonBuffer jsonBuffer(capacity);
+
+  JsonObject& json = jsonBuffer.createObject();
+  json["padre"] = prefix;
+
+  JsonArray& subdirectorios = json.createNestedArray("subdirectorios");
+  JsonArray& ficheros = json.createNestedArray("ficheros");
+
+  Dir root = SPIFFS.openDir(prefix);
+
+  while(root.next())
+    {
+    String fichero=String(root.fileName());
+    //Si el nombre incluye el prefix, se lo quito
+    uint8_t inicio=(fichero.indexOf(prefix)==-1?0:fichero.indexOf(prefix));
+    fichero=fichero.substring(inicio+prefix.length());
+
+    if(esDirectorio(fichero)) 
+      {
+      //verifico que el directorio no este ya en la lista
+      boolean existe=false;
+      String subdir=fichero.substring(0,fichero.indexOf("/"));
+      for(uint8_t i=0;i<subdirectorios.size();i++)
+        {
+        if(subdir==subdirectorios[i]) 
+          {
+          existe=true;
+          break;
+          }
+        }
+      if(!existe) subdirectorios.add(fichero.substring(0,fichero.indexOf("/")));
+      }
+    else 
+      {
+      JsonObject& fichero_nuevo = ficheros.createNestedObject();
+      fichero_nuevo["nombre"] = fichero;
+      fichero_nuevo["tamano"] = root.fileSize();
+      fichero_nuevo["fechaEdicion"] = horaYfecha(root.fileTime());
+      }
+    }   
+  json.printTo(salida);
+  return (salida);
+  }  
+
+/************************************************/
 /* Devuelve si existe o no un fichero en el     */
 /* dispositivo                                  */
 /************************************************/
@@ -164,4 +243,23 @@ boolean formatearFS(void)
   {  
   return (SPIFFS.format());
   }
-  
+
+/***************************************************************/
+/*                                                             */
+/*  Genera una cadena con la hora en formato dd-mm-yy HH:MM:SS */
+/*  a partir de la estrucutura time_t que se le pasa           */
+/*                                                             */
+/***************************************************************/
+String horaYfecha(time_t entrada)
+  {
+  String cad="";  
+  const char formato[]="%d-%m-%Y %H:%M:%S";
+  const uint8_t longitud=20;
+  char buf[longitud];
+
+  struct tm* ts = localtime(&entrada);
+  strftime(buf, sizeof(buf), formato, ts);
+  buf[longitud-1]=0;
+
+  return (String(buf));    
+  }
