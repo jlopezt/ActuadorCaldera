@@ -9,7 +9,7 @@
 
 //Defines generales
 #define NOMBRE_FAMILIA "Actuador_rele"
-#define VERSION "v1.7.0"
+#define VERSION "v1.7.1"
 #define SEPARADOR        '|'
 #define SUBSEPARADOR     '#'
 #define KO               -1

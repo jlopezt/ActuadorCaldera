@@ -201,12 +201,12 @@ boolean comparaTopics(String topicSuscrito, String topicRecibido)
 /***************************************************/
 void procesaTopicOrdenes(char* topic, byte* payload, unsigned int length)
   {  
-  char mensaje[length];    
+  char mensaje[length+1];    
   int id;  
   int estado;
     
   //copio el payload en la cadena mensaje
-  for(int8_t i=0;i<length;i++) mensaje[i]=payload[i];
+  for(int16_t i=0;i<length;i++) mensaje[i]=payload[i];
   mensaje[length]=0;//acabo la cadena
 
   /**********************Leo el JSON***********************/

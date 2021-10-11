@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <!--<META HTTP-EQUIV="REFRESH" CONTENT="10;URL=/datos">-->
+    <TITLE>Domoticae</TITLE>
+    <link rel="stylesheet" type="text/css" href="css.css">
+    <script>
+      const FONDO     ="#DDDDDD";
+      const TEXTO     ="#000000";
+      const ACTIVO    ="#FFFF00";
+      const DESACTIVO ="#DDDDDD";
+
+      var reloadPeriod = 2000;
+      var running = false;
+
+      function actualiza(id,valor){
+        var a=document.getElementById(id);
+        a.innerHTML=valor;        
+      };
+
+      function loadValues(){
+        if(!running) return;
+        var xh = new XMLHttpRequest();
+        xh.onreadystatechange = function(){
+          if (xh.readyState == 4){
+            if(xh.status == 200) {
+              console.log("JSON: " + xh.responseText);//JSON.stringify(xh));
+              var res = JSON.parse(xh.responseText);
+              //Salidas
+              var salidas=res.salidas;
+              salidas.forEach(function(salida,indice,array) {
+                var hilera = document.getElementById("salida_"+indice);
+                if(hilera==null){
+                    console.log("no existe la fila, la creo");
+                    var hilera = document.createElement("tr");
+                    hilera.setAttribute("id", "salida_" + indice);
+                    hilera.setAttribute("class","modo2");
+                    document.getElementById("body_tabla_salidas").appendChild(hilera);
+
+                    celda = document.createElement("td");
+                    celda.setAttribute("id","nombre_"+indice);
+                    celda.setAttribute("align","center");
+                    hilera.appendChild(celda);
+
+                    celda = document.createElement("td");
+                    celda.setAttribute("id","nombreEstado_"+indice);
+                    celda.setAttribute("align","left");
+                    hilera.appendChild(celda);
+
+                    celda = document.createElement("td");
+                    celda.setAttribute("id","mensaje_"+indice);
+                    celda.setAttribute("align","left");
+                    hilera.appendChild(celda);
+
+                    var celda = document.createElement("td");
+                    celda.setAttribute("id","accion_"+indice);
+                    celda.setAttribute("align","center");
+                    hilera.appendChild(celda);
+                }
+
+                //Nombre
+                console.log("nombre: "+salida.nombre);
+                actualiza("nombre_" + indice,salida.nombre);
+                //nombreEstado
+                console.log("nombreEstado: "+salida.nombreEstado);
+                actualiza("nombreEstado_" + indice,salida.nombreEstado);
+                //Mensaje estado
+                console.log("mensaje: "+salida.mensaje);
+                actualiza("mensaje_" + indice,salida.mensaje);
+                //Boton
+                var nombreEstado=document.getElementById("nombreEstado_" + indice);
+                var mensaje=document.getElementById("mensaje_" + indice);
+                var accion=document.getElementById("accion_" + indice);
+
+                console.log("estado: "+salida.estado);
+                if(salida.estado==0) {
+                  nombreEstado.style.backgroundColor=DESACTIVO;
+                  mensaje.style.backgroundColor=DESACTIVO;
+
+                  accion.innerHTML  = "<form action='activaRele'><input  type='hidden' id='activa_" + indice + "' name='id' value='" + indice + "'><input STYLE='color: #000000; text-align: center; background-color: #FFFF00; width: 80px' type='submit' value='activar'></form>";
+                }
+                else {
+                  nombreEstado.style.backgroundColor=ACTIVO;
+                  mensaje.style.backgroundColor=ACTIVO;
+                  
+                  accion.innerHTML  = "<form action='desactivaRele'><input  type='hidden' id='desactiva_" + indice + "' name='id' value='" + indice + "'><input STYLE='color: #000000; text-align: center; background-color: #DDDDDD; width: 80px' type='submit' value='desactivar'></form>";
+                }
+              })
+
+              //Bloqueo
+              var bloqueo=res.bloque;
+              var hilera = document.getElementById("bloqueo");
+                if(hilera==null){
+                    console.log("no existe la fila, la creo");
+                    var hilera = document.createElement("tr");
+                    hilera.setAttribute("id", "bloqueo");
+                    hilera.setAttribute("class","modo2");
+                    document.getElementById("body_tabla_bloqueo").appendChild(hilera);
+
+                    celda = document.createElement("td");
+                    celda.setAttribute("id","estadoBloqueo");
+                    celda.setAttribute("align","center");
+                    hilera.appendChild(celda);              
+
+                    celda = document.createElement("td");
+                    celda.setAttribute("id","accionBloqueo");
+                    celda.setAttribute("align","center");
+                    hilera.appendChild(celda);              
+                }
+
+                //Estado
+                console.log("estado bloqueo: " + res.estadoBloqueo);
+                var estadoText=""
+                if(res.estadoBloqueo) estadoText="Activo"
+                else estadoText="Inactivo"
+                actualiza("estadoBloqueo",estadoText);
+                //Accion
+                var estadoBloqueo=document.getElementById("estadoBloqueo");
+                var accion=document.getElementById("accionBloqueo");
+
+                if(res.estadoBloqueo==0) {
+                  estadoBloqueo.style.backgroundColor=DESACTIVO;
+                  accion.innerHTML  = "<form action='bloquear'><input  type='hidden' id='accion' name='accion' value='bloquear'><input STYLE='color: #000000; text-align: center; background-color: #FFFF00; width: 80px' type='submit' value='bloquear'></form>";
+                }
+                else {
+                  estadoBloqueo.style.backgroundColor=ACTIVO;                 
+                  accion.innerHTML  = "<form action='bloquear'><input  type='hidden' id='accion' name='accion' value='desbloquear'><input STYLE='color: #000000; text-align: center; background-color: #DDDDDD; width: 80px' type='submit' value='desbloquear'></form>";
+                }
+
+              if(running) setTimeout(loadValues, reloadPeriod);
+            } else running = false;
+          }
+        };
+        xh.open("GET", "estado", true);
+        xh.send(null);
+      };
+
+      function run(){
+        if(!running){
+          running = true;
+          loadValues();
+        }
+      }            
+
+      function inicializa(){
+        run(); 
+      }
+    </script>
+  </HEAD>
+
+  <BODY onload="inicializa()">
+    <center>
+    <TABLE border="0" width="100%" cellpadding="0" cellspacing="0" width="300" class="tabla">
+      <caption>Salidas</caption>
+      <tbody id="body_tabla_salidas">
+        <TR>
+          <th width='15%'>Nombre</th>
+          <th width='25%'>Estado</th>
+          <th width='40%'>Mensaje</th>
+          <th width='15%'>Acción</th>
+      </TR>
+      <!--Una fila por cada habitacion-->     
+      </tbody>
+    </TABLE>
+    
+    <BR>
+
+    <TABLE border="0" width="80%" cellpadding="0" cellspacing="0" width="300" class="tabla">
+      <caption>Bloqueo</caption>
+      <tbody id="body_tabla_bloqueo">
+        <TR>
+          <th width='50%'>Estado</th>
+          <th width='50%'>Acción</th>
+        </TR>
+        <!--Una fila por cada bloqueo-->     
+      </tbody>          
+    </TABLE>
+  </center>
+    </BODY>
+</HTML>

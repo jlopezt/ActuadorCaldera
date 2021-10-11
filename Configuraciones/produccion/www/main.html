@@ -21,12 +21,10 @@
         }
 
         if (document.getElementById("delante").className == "visible") {
-          cambiaIFrame("",'iframe_a'); 
           console.log("Delante: " + document.getElementById("delante").className + " Ocultando delante");
           document.getElementById("delante").className = "oculto";
           document.getElementById("nav").className = "oculto";
         } else {
-          cambiaIFrame("root.html",'iframe_a'); 
           console.log("Delante: " + document.getElementById("delante").className + " mostrando delante");
           document.getElementById("delante").className = "visible";
           document.getElementById("nav").className = "visible";          
