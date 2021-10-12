@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" type="text/css" href="css.css" media="screen" />
     <link href='main.css' rel='stylesheet' type='text/css'>
-
     <script>
       function cambiaDiv() {
         console.log("Entrando");
@@ -40,13 +39,23 @@
             if(xh.status == 200) {
               console.log("JSON: " + JSON)
               var res = JSON.parse(xh.responseText);
-              //nombre
-              console.log("Nombre: "+res.nombre);
-              cambiaNombre(res.nombre);
-              //document.getElementById("nombreDispositivo").innerText=res.nombre;
-              //consigna
-              console.log("Version: "+res.version);
-              document.getElementById("version").innerText=res.version;
+              //nombre familia
+              if (typeof res.nombreFamilia !== 'undefined'){
+                console.log("Nombre familia: "+res.nombreFamilia);
+                cambiaNombreFamilia(res.nombreFamilia);
+              }
+              //nombre dispositivo
+              if (typeof res.nombreDispositivo !== 'undefined'){
+                console.log("Nombre dispositivo: "+res.nombreDispositivo);
+                cambia("nombreDispositivo",res.nombreDispositivo);
+                //document.getElementById("nombreDispositivo").innerText=res.nombreDispositivo;
+              }
+              //version
+              if (typeof res.version !== 'undefined'){
+                console.log("Version: "+res.version);
+                cambia("version",res.version);
+                //document.getElementById("version").innerText=res.version;
+              }
             }
           }
         };
@@ -69,7 +78,11 @@
         document.getElementById("article").style.height=alto+"px";     
       }
       
-      function cambiaNombre(nombre){
+      function cambia(elemento,valor){
+        document.getElementById(elemento).innerHTML=valor;
+      }
+
+      function cambiaNombreFamilia(nombre){
         document.getElementById("nombre_1").innerHTML=nombre.substr(0,nombre.length-3);
         document.getElementById("nombre_2").innerHTML=nombre.substr(nombre.length-3,1);
         document.getElementById("nombre_3").innerHTML=nombre.substr(nombre.length-2);
@@ -85,7 +98,7 @@
   </head>
   <body onload="inicializa();">
     <header style="overflow: auto;" id="header">
-      <div class="izquierda" id="nombreDispositivo">
+      <div class="izquierda" id="nombreFamilia">
         <span id="nombre_1"></span><span id="nombre_2" style="color:red"></span><span id="nombre_3"></span>
       </div>
       <div class="derecha" style="font-size: 20px;">
@@ -129,6 +142,8 @@
     </section>
 
     <footer id="footer">
+      <div class="izquierda" id="nombreDispositivo"></div>
+      <div class="izquierda" id="separador">&nbsp;-&nbsp;</div>
       <div class="izquierda" id="version"></div>
       <div class="derecha"><a href="https://domoticae.lopeztola.com" target="_self" style="text-decoration:none; color:white;">domoticae-2020</a></div>
     </footer>
