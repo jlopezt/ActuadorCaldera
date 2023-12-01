@@ -326,7 +326,7 @@ String generaJsonEstado(void)
   for(int8_t i=0;i<MAX_RELES;i++)
     {
     if(i>0) cad += ",\n\t"; //si no es la primera
-    cad += nombreRele(i);
+    cad += """ + nombreRele(i) + """;
     cad += ": ";
     cad += estadoRele(i);  
     }

@@ -4,22 +4,24 @@
 #define ENCENDIDO String("#FFFF00")
 #define APAGADO   String("#DDDDDD")
 
-
+/*********************************** Includes *****************************************************************/
 #include <ESP8266WebServer.h>
 //#include <ESP8266mDNS.h>
 #include <FS.h>
 
+/*********************************** Variables globales *****************************************************************/
 ESP8266WebServer server(PUERTO_WEBSERVER);
 
 const String cabeceraHTMLlight = "<!DOCTYPE html>\n<head>\n<meta charset=\"UTF-8\" />\n<TITLE>Domoticae</TITLE><link rel=\"stylesheet\" type=\"text/css\" href=\"css.css\"></HEAD><html lang=\"es\">\n<BODY>\n"; 
 const String pieHTMLlight="</body>\n</HTML>\n";
 
+/*********************************** Inicializacion y configuracion *****************************************************************/
 void inicializaWebServer(void)
   {
   //decalra las URIs a las que va a responder
   server.on("/", HTTP_ANY, handleMain); //layout principal
   server.on("/estado", HTTP_ANY, handleEstado); //Servicio de estdo de reles
-  server.on("/nombre", handleNombre); //devuelve un JSON con las medidas, reles y modo para actualizar la pagina de datos  
+  server.on("/nombre", HTTP_ANY, handleNombre); //devuelve un JSON con las medidas, reles y modo para actualizar la pagina de datos  
   server.on("/root", HTTP_ANY, handleRoot); //devuleve el frame con la informacion principal
     
   server.on("/activaRele", HTTP_ANY, handleActivaRele); //Servicio de activacion de rele
@@ -59,7 +61,9 @@ void webServer(int debug)
   {
   server.handleClient();
   }
+/********************************* FIn inicializacion y configuracion ***************************************************************/
 
+/************************* Gestores de las diferentes URL coniguradas ******************************/
 /********************************************************/
 /*  Servicios comunes para actualizar y cargar la web   */
 /********************************************************/    
@@ -114,19 +118,6 @@ void handleBloquear()
       }
     }
     
-  handleRoot();
-  }
-    
-/*********************************************/
-/*                                           */
-/*    desactiva el bloqueo de mensajes MQTT  */
-/*    para la activacion desacticion de      */
-/*    los reles                              */
-/*                                           */
-/*********************************************/
-void xxxhandledesbloquear() 
-  {
-  desactivaBloqueoMQTT();
   handleRoot();
   }
     
@@ -360,6 +351,8 @@ void handleInfo(void)
   cad += pieHTMLlight;
   server.send(200, "text/html", cad);     
   }
+/**********************************************************************/
+
 /************************* FICHEROS *********************************************/
 /*********************************************/
 /*                                           */
@@ -669,25 +662,25 @@ String getContentType(String filename) { // determine the filetype of a given fi
 
 bool handleFileRead(String path) 
   { // send the right file to the client (if it exists)
-  Serial.println("handleFileRead: " + path);
+  //Serial.println("handleFileRead: " + path);
   
   if (!path.startsWith("/")) path = "/" + path;
   path = "/www" + path; //busco los ficheros en el SPIFFS en la carpeta www
   //if (!path.endsWith("/")) path += "/";
   
-  String contentType = getContentType(path);             // Get the MIME type
+  String contentType = getContentType(path);
   String pathWithGz = path + ".gz";
   if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) 
-    { // If the file exists, either as a compressed archive, or normal
-    if (SPIFFS.exists(pathWithGz))                         // If there's a compressed version available
-      path += ".gz";                                         // Use the compressed verion
+    {
+    if (SPIFFS.exists(pathWithGz)) path += ".gz";
+
     File file = SPIFFS.open(path, "r");                    // Open the file
     size_t sent = server.streamFile(file, contentType);    // Send it to the client
     file.close();                                          // Close the file again
-    Serial.println(String("\tSent file: ") + path);
+    //Serial.println(String("\tSent file: ") + path);
     return true;
     }
-  Serial.println(String("\tFile Not Found: ") + path);   // If the file doesn't exist, return false
+  //Serial.println(String("\tFile Not Found: ") + path);   // If the file doesn't exist, return false
   return false;
   }
 
@@ -744,7 +737,7 @@ void handleFileUpload()
   static File fsUploadFile;
   HTTPUpload& upload = server.upload();
 
-  Serial.printf("Vamos a subir un fichero...");
+  //Serial.printf("Vamos a subir un fichero...");
   if(upload.status == UPLOAD_FILE_START)
     {
     if(server.hasArg("directorio"))path=server.arg("directorio");
@@ -752,7 +745,7 @@ void handleFileUpload()
     if(!upload.filename.startsWith("/")) path = path + "/";
     path += upload.filename;    
     
-    Serial.printf("handleFileUpload Name: %s",path.c_str());
+    Serial.printf("handleFileUpload Name: [%s]\n",path.c_str());
     fsUploadFile = SPIFFS.open(path.c_str(), "w");            // Open the file for writing in SPIFFS (create if it doesn't exist)
     if(!fsUploadFile) Serial.printf("Error al crear el fichero\n");
     }

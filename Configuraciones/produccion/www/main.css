@@ -10,7 +10,7 @@ header {
   padding: 20px;
   text-align: left;
   font-size: 35px;
-  font: verdana;
+  font-family: Trebuchet MS, Arial;/*Verdana;*/
   font-weight: bold;
   color: white;
 }
@@ -73,7 +73,7 @@ footer {
   padding: 10px;
   text-align: right;
   color: white;
-  font: verdana;
+  font-family: Trebuchet MS, Arial;/*Verdana;*/
   font-weight: bold;
 }
 
@@ -165,7 +165,7 @@ h1 {
 	font-family: tahoma;
 	text-align: center;
 	text-decoration: none;
-	color: withe;
+	color: white;
 	font-size: 48px;
   margin-block-start: 0em;
   margin-block-end: 0em;  
